@@ -1,50 +1,122 @@
-# Ordværk - Dansk grammatiktræning
+<div align="center">
 
-Ordværk is a responsive web app for practising Danish grammar through short, interactive exercises. It is designed for learners around levels A2-B1 and runs entirely in the browser.
+![Ordværk - playful Danish grammar learning](assets/ordvaerk-banner.png)
 
-## Features
+# 🇩🇰 Ordværk
 
-- Topic-based quizzes for verbs, adverbs, pronouns, adjectives, and conjunctions
-- A mixed quiz covering all grammar topics
-- Sentence-building exercises for Danish word order
-- A 60-second speed challenge
-- Immediate feedback and a short explanation after each answer
-- Points, answer streaks, daily goals, and best scores
-- Progress saved locally in the browser
-- Responsive layout for phones, tablets, and desktop computers
-- No backend, database, account, or build process required
+### 🎯 Interactive Danish grammar training for A2-B1 learners
 
-## Technology
+## 🧠 ✦ 🎮 ✦ 🧩 ✦ ⚡ ✦ 🏆
 
-The project uses only:
+**Practice. Play. Understand. Repeat.** ✨
 
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- Browser `localStorage` for progress
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=111)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![No dependencies](https://img.shields.io/badge/dependencies-none-2B8068?style=for-the-badge)](#-technology)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-ready-222?style=for-the-badge&logo=github)](#-deploy-with-github-pages)
 
-There are no npm dependencies.
+</div>
 
-## Project structure
+---
+
+## 👋 What is Ordværk?
+
+**Ordværk** is a responsive web app that makes Danish grammar practice feel more like a game. It is designed for learners around levels **A2-B1** and works entirely in the browser - no account, database, or installation required.
+
+Learners receive instant feedback, short explanations, points, streaks, and progress tracking while practising five essential grammar areas.
+
+> 💡 **The idea:** small exercises, clear explanations, and frequent repetition make grammar easier to remember.
+
+## 🧭 How it works
+
+```mermaid
+flowchart TD
+    A["🎓 Choose a grammar topic"] --> B{"🎮 Pick a game mode"}
+    B --> C["✅ Topic quiz"]
+    B --> D["🧩 Build a sentence"]
+    B --> E["⏱️ 60-second sprint"]
+    C --> F["💬 Instant explanation"]
+    D --> F
+    E --> F
+    F --> G["🏆 Points, streaks & progress"]
+```
+
+## 🎮 Training modes
+
+| Mode | What the learner does | Best for |
+| --- | --- | --- |
+| 🎲 **Mixed quiz** | Answers 10 questions from every topic | General revision |
+| 🎯 **Topic practice** | Focuses on one grammar category | Targeted improvement |
+| 🧩 **Build the sentence** | Places Danish words in the correct order | Word order |
+| ⏱️ **60-second sprint** | Answers as many questions as possible | Speed and recall |
+
+## 📚 Grammar topics
+
+| Icon | Topic | Learners practise |
+| :---: | --- | --- |
+| 🔴 | **Verber** | Present, past, perfect tense, auxiliaries, and modal verbs |
+| 🔵 | **Adverbier** | Placement, direction, and central adverbs |
+| 🟡 | **Pronominer** | Personal, reflexive, possessive, and indefinite pronouns |
+| 🟢 | **Adjektiver** | Agreement, comparison, and irregular forms |
+| 🟣 | **Konjunktioner** | Subordinate clauses, connectors, and Danish word order |
+
+<div align="center">
+
+![Five visual cards representing the Ordværk grammar topics](assets/grammar-topics.png)
+
+_🔴 Verber · 🔵 Adverbier · 🟡 Pronominer · 🟢 Adjektiver · 🟣 Konjunktioner_
+
+</div>
+
+## ✨ Features
+
+- 📝 **50 self-correcting questions** across five grammar topics
+- 🧩 **10 sentence-building challenges**
+- ⚡ Immediate feedback after every answer
+- 💬 Short, learner-friendly grammar explanations
+- 🏆 Points and answer streaks
+- 📅 A daily practice goal
+- 📈 Best scores saved separately for each topic
+- 💾 Progress stored locally in the browser
+- ⌨️ Keyboard-friendly controls and visible focus states
+- 📱 Responsive layout for mobile, tablet, and desktop
+- 🚫 No backend, login, database, or build process
+
+## 🛠️ Technology
+
+Ordværk keeps the technical setup intentionally simple:
+
+- 🧱 **HTML5** for structure
+- 🎨 **CSS3** for the responsive visual design
+- ⚙️ **Vanilla JavaScript** for questions and game logic
+- 💾 Browser **`localStorage`** for learner progress
+
+There are **no npm dependencies** and no compilation step. 🎉
+
+## 📁 Project structure
 
 ```text
 dansk-grammatiktraener/
+├── assets/
+│   ├── ordvaerk-banner.png  # 🖼️ README hero graphic
+│   └── grammar-topics.png   # 🎴 Grammar topic graphic
 ├── dist/
-│   ├── index.html      # Page structure and metadata
-│   ├── styles.css      # Visual design and responsive styles
-│   └── app.js          # Questions, game logic, and saved progress
+│   ├── index.html      # 🧱 Page structure and metadata
+│   ├── styles.css      # 🎨 Design and responsive layout
+│   └── app.js          # ⚙️ Questions, games, and progress
 ├── .openai/
-│   └── hosting.json    # Configuration used by OpenAI Sites
-└── README.md
+│   └── hosting.json    # ☁️ OpenAI Sites configuration
+└── README.md           # 📖 Project documentation
 ```
 
-## Run locally
+## 🚀 Run locally
 
-### Simplest method
+### Option 1: open the file
 
-Open `dist/index.html` directly in a web browser.
+Open **`dist/index.html`** directly in your browser. That is all you need. ✨
 
-### With a local web server
+### Option 2: use a local server
 
 From the project directory, run:
 
@@ -52,11 +124,11 @@ From the project directory, run:
 python3 -m http.server 8000 --directory dist
 ```
 
-Then open [http://localhost:8000](http://localhost:8000).
+Then visit **[http://localhost:8000](http://localhost:8000)**.
 
-## Push the project to GitHub
+## 🐙 Push the project to GitHub
 
-Create an empty repository on GitHub, then run these commands from the project directory:
+Create an empty repository on GitHub, open a terminal in the project directory, and run:
 
 ```bash
 git init
@@ -67,18 +139,22 @@ git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
 git push -u origin main
 ```
 
-Replace `YOUR-USERNAME` and `YOUR-REPOSITORY` with your GitHub details.
+Replace **`YOUR-USERNAME`** and **`YOUR-REPOSITORY`** with your GitHub details.
 
-> If Git is already initialized, skip `git init`. If an `origin` remote already exists, update it with `git remote set-url origin YOUR-GITHUB-URL` instead of adding it again.
+> ℹ️ **Already using Git?** Skip `git init`. If an `origin` remote already exists, use `git remote set-url origin YOUR-GITHUB-URL`.
 
-## Deploy with GitHub Pages
+## 🌍 Deploy with GitHub Pages
 
-Because the public files are stored in `dist/`, the cleanest GitHub Pages setup uses GitHub Actions.
+Because the website files are inside **`dist/`**, the cleanest GitHub Pages setup uses GitHub Actions.
 
-1. Open your repository on GitHub.
-2. Go to **Settings > Pages**.
-3. Under **Build and deployment**, select **GitHub Actions** as the source.
-4. Create `.github/workflows/deploy.yml` with the following content:
+1. ⚙️ Open your repository on GitHub.
+2. 📄 Go to **Settings > Pages**.
+3. 🚀 Select **GitHub Actions** under **Build and deployment**.
+4. 📁 Create **`.github/workflows/deploy.yml`**.
+5. 📋 Add the workflow below.
+
+<details>
+<summary><strong>👀 Show the GitHub Pages workflow</strong></summary>
 
 ```yaml
 name: Deploy to GitHub Pages
@@ -120,25 +196,32 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-Commit and push the workflow. GitHub will publish the app after the action finishes.
+</details>
 
-## Other deployment options
+Commit and push the workflow. GitHub will automatically publish the app after the action finishes. ✅
 
-The `dist` folder is a complete static website. It can also be deployed to services such as Netlify, Cloudflare Pages, Vercel, or any conventional web server.
+## ☁️ Other deployment options
 
-Set the publish or output directory to:
+The **`dist`** folder is a complete static website, so it can also be deployed to:
 
-```text
-dist
-```
+- 🟦 Netlify
+- 🟧 Cloudflare Pages
+- ▲ Vercel
+- 🖥️ Any conventional web server
 
-No build command is needed.
+Use these settings:
 
-## Add or edit questions
+| Setting | Value |
+| --- | --- |
+| Build command | _Leave empty_ |
+| Publish directory | `dist` |
 
-Question data is stored near the top of `dist/app.js`.
+## ✍️ Add or edit questions
 
-A multiple-choice question follows this structure:
+All question data is stored near the top of **`dist/app.js`**.
+
+<details>
+<summary><strong>📝 Multiple-choice question example</strong></summary>
 
 ```javascript
 {
@@ -150,33 +233,66 @@ A multiple-choice question follows this structure:
 }
 ```
 
-The `answer` value must exactly match one item in `options`. Supported topic keys are:
+</details>
 
-- `verbs`
-- `adverbs`
-- `pronouns`
-- `adjectives`
-- `conjunctions`
+The **`answer`** value must exactly match one item in **`options`**.
 
-Sentence-building exercises are stored in the `BUILD_QUESTIONS` array. For these exercises, the words selected by the learner must produce the exact text in `answer`.
+### 🔑 Supported topic keys
 
-## Reset saved progress
+- `verbs` 🔴
+- `adverbs` 🔵
+- `pronouns` 🟡
+- `adjectives` 🟢
+- `conjunctions` 🟣
 
-Progress is stored in the browser under the key `ordvaerk-progress`. Learners can reset it from the browser developer console with:
+Sentence-building exercises are stored in the **`BUILD_QUESTIONS`** array. The selected words must produce exactly the text stored in **`answer`**.
+
+## ♻️ Reset saved progress
+
+Learner progress is stored under the browser key **`ordvaerk-progress`**. Reset it from the browser developer console:
 
 ```javascript
 localStorage.removeItem("ordvaerk-progress");
 location.reload();
 ```
 
-## Accessibility and browser support
+## ♿ Accessibility and browser support
 
-The interface supports keyboard navigation, visible focus states, screen-reader feedback, reduced-motion preferences, and responsive layouts. It is intended for current versions of Chrome, Firefox, Safari, and Edge.
+Ordværk includes:
 
-## Content notes
+- ⌨️ Keyboard navigation
+- 🔎 Visible focus states
+- 🔊 Screen-reader feedback
+- 🧘 Reduced-motion support
+- 📐 Responsive layouts
 
-The included exercises are original learning activities informed by common Danish grammar patterns. Review all educational content before using the app in a formal course or publishing substantial modifications.
+The app is intended for current versions of **Chrome, Firefox, Safari, and Edge**.
 
-## License
+## 🧑‍🏫 Content notes
+
+The exercises are original learning activities informed by common Danish grammar patterns. Review all educational content before using the app in a formal course or publishing substantial modifications.
+
+## 🗺️ Ideas for future development
+
+- 🔉 Danish pronunciation audio
+- 🏅 Achievements and badges
+- 🎚️ More difficulty levels
+- 🧠 A review mode for incorrect answers
+- 🌐 Interface translations
+- 📊 A detailed progress dashboard
+
+## 📜 License
 
 No open-source license is included yet. Add a license file before inviting others to copy, modify, or redistribute the project.
+
+---
+
+<div align="center">
+
+## 💙 ❤️ 💛 💚 💜
+
+### ❤️ Built for people learning Danish 🇩🇰
+
+### 🧠 God fornøjelse med grammatikken! 🎉
+
+</div>
