@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10243e">
+  <meta name="description" content="Interaktiv træning i dansk grammatik: verber, adverbier, pronominer, adjektiver og konjunktioner.">
+  <title>Ordværk - Træn dansk grammatik</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,700;9..144,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" data-action="home" aria-label="Gå til forsiden">
+        <span class="brand-mark" aria-hidden="true">Ø</span>
+        <span>Ordværk</span>
+      </button>
+      <div class="top-stats" aria-label="Din fremgang">
+        <span class="stat-pill"><span aria-hidden="true">◆</span> <strong id="totalPoints">0</strong> point</span>
+        <span class="stat-pill"><span aria-hidden="true">⚡</span> <strong id="bestStreak">0</strong> rekord</span>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1"></main>
+  </div>
+
+  <template id="homeTemplate">
+    <section class="home-view">
+      <div class="intro-row">
+        <div>
+          <p class="eyebrow">Dansk grammatik · A2-B1</p>
+          <h1>Gør grammatikken<br><em>levende.</em></h1>
+          <p class="intro-copy">Vælg en træning, få svar med det samme, og lær af korte forklaringer undervejs.</p>
+        </div>
+        <div class="daily-card">
+          <span class="daily-label">Dagens mål</span>
+          <div class="daily-ring" id="dailyRing"><strong id="dailyDone">0</strong><span>/ 10</span></div>
+          <p>rigtige svar i dag</p>
+        </div>
+      </div>
+
+      <section aria-labelledby="play-heading">
+        <div class="section-title">
+          <div><p class="kicker">Vælg spillemåde</p><h2 id="play-heading">Hvordan vil du træne?</h2></div>
+        </div>
+        <div class="mode-grid">
+          <button class="mode-card mode-primary" data-mode="mixed">
+            <span class="mode-icon" aria-hidden="true">✦</span>
+            <span><strong>Blandet quiz</strong><small>10 spørgsmål · alle emner</small></span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="mode-card" data-mode="build">
+            <span class="mode-icon" aria-hidden="true">▦</span>
+            <span><strong>Byg sætningen</strong><small>Sæt ordene i rigtig rækkefølge</small></span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="mode-card" data-mode="sprint">
+            <span class="mode-icon" aria-hidden="true">◷</span>
+            <span><strong>60 sekunders sprint</strong><small>Hvor mange kan du nå?</small></span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>
+
+      <section aria-labelledby="topics-heading">
+        <div class="section-title">
+          <div><p class="kicker">Træn målrettet</p><h2 id="topics-heading">Vælg et emne</h2></div>
+          <span class="progress-note" id="progressNote">0 af 5 emner øvet</span>
+        </div>
+        <div class="topic-grid" id="topicGrid"></div>
+      </section>
+    </section>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
