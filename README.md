@@ -22,7 +22,7 @@
 
 ## 👋 What is Ordværk?
 
-**Ordværk** is a responsive web app that makes Danish grammar practice feel more like a game. It is designed for learners around levels **A2-B1** and works entirely in the browser - no account, database, or installation required.
+**Ordværk** is a responsive web app that makes Danish grammar and writing practice feel more interactive. It is designed for learners around levels **A2-B1** and works entirely in the browser - no account, database, or installation required.
 
 Learners receive instant feedback, short explanations, points, streaks, and progress tracking while practising five essential grammar areas.
 
@@ -36,9 +36,12 @@ flowchart TD
     B --> C["✅ Topic quiz"]
     B --> D["🧩 Build a sentence"]
     B --> E["⏱️ 60-second sprint"]
+    B --> H["✍️ Writing practice"]
     C --> F["💬 Instant explanation"]
     D --> F
     E --> F
+    H --> I["✅ Word count & self-check"]
+    I --> G
     F --> G["🏆 Points, streaks & progress"]
 ```
 
@@ -50,6 +53,7 @@ flowchart TD
 | 🎯 **Topic practice** | Focuses on one grammar category | Targeted improvement |
 | 🧩 **Build the sentence** | Places Danish words in the correct order | Word order |
 | ⏱️ **60-second sprint** | Answers as many questions as possible | Speed and recall |
+| ✍️ **Writing practice** | Writes e-mails, notices, applications, and complaints | Danskprøve preparation |
 
 ## 📚 Grammar topics
 
@@ -73,6 +77,9 @@ _🔴 Verber · 🔵 Adverbier · 🟡 Pronominer · 🟢 Adjektiver · 🟣 Kon
 
 - 📝 **50 self-correcting questions** across five grammar topics
 - 🧩 **10 sentence-building challenges**
+- ✍️ **10 realistic writing tasks** with timers and minimum word counts
+- 💾 Automatically saved writing drafts
+- ✅ Writing requirements, self-check lists, useful phrases, and model answers
 - ⚡ Immediate feedback after every answer
 - 💬 Short, learner-friendly grammar explanations
 - 🏆 Points and answer streaks
