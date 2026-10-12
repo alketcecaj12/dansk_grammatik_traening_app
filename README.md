@@ -10,11 +10,15 @@
 
 **Practice. Play. Understand. Repeat.** ✨
 
+### 👉 [**Start practising now — open Ordværk**](https://alketcecaj12.github.io/dansk_grammatik_traening_app/) 👈
+
+*Free, no sign-up, works on phone, tablet and desktop.*
+
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=111)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![No dependencies](https://img.shields.io/badge/dependencies-none-2B8068?style=for-the-badge)](#-technology)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-ready-222?style=for-the-badge&logo=github)](#-deploy-with-github-pages)
+[![Live on GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-2B8068?style=for-the-badge&logo=github)](https://alketcecaj12.github.io/dansk_grammatik_traening_app/)
 
 </div>
 
@@ -151,6 +155,8 @@ Replace **`YOUR-USERNAME`** and **`YOUR-REPOSITORY`** with your GitHub details.
 > ℹ️ **Already using Git?** Skip `git init`. If an `origin` remote already exists, use `git remote set-url origin YOUR-GITHUB-URL`.
 
 ## 🌍 Deploy with GitHub Pages
+
+> ✅ **This repository is already deployed.** The live app is at **<https://alketcecaj12.github.io/dansk_grammatik_traening_app/>**, and every push to `main` redeploys it automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The steps below are for setting up your own copy.
 
 Because the website files are inside **`dist/`**, the cleanest GitHub Pages setup uses GitHub Actions.
 
