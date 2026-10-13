@@ -272,131 +272,488 @@ const WRITING_TASKS = [
     model:"Til restaurant Kabale\n\nJeg skriver for at klage over vores besøg fredag den 8. marts klokken 19. Min ven og jeg bestilte to burgere med pommes frites. Vi ventede næsten en time på maden, og da den kom, var burgerne kolde. Tjeneren var venlig, men hun glemte også vores drikkevarer. Vi betalte fuld pris, selvom oplevelsen var dårlig. Jeg vil derfor gerne bede om at få halvdelen af beløbet tilbage eller modtage et gavekort til et nyt besøg.\n\nJeg ser frem til jeres svar.\n\nMed venlig hilsen\nAlex Jensen"
   }
 ];
+/* ================================================================
+   App logic
+   ================================================================ */
 
 const app = document.querySelector("#app");
-const state = { mode:null, topic:null, quizSet:null, questions:[], index:0, correct:0, answered:false, streak:0, bestRun:0, timer:null, nextTimer:null, timeLeft:60, buildAnswer:[], writingTask:null, writingTimer:null, writingSeconds:0, writingRunning:false };
-const saved = JSON.parse(localStorage.getItem("ordvaerk-progress") || "{}");
-const progress = { points:saved.points || 0, bestStreak:saved.bestStreak || 0, daily:saved.daily || 0, date:saved.date || "", topics:saved.topics || {}, writingCompleted:saved.writingCompleted || [] };
-const writingDrafts = JSON.parse(localStorage.getItem("ordvaerk-writing-drafts") || "{}");
+const live = document.querySelector("#liveRegion");
 
-function todayKey(){ return new Date().toISOString().slice(0,10); }
-function normalizeDaily(){ if(progress.date !== todayKey()){ progress.daily=0; progress.date=todayKey(); save(); } }
-function save(){ localStorage.setItem("ordvaerk-progress", JSON.stringify(progress)); updateTopStats(); }
+/* ---------- Safe storage (works in private mode / blocked storage) ---------- */
+const store = {
+  get(key, fallback){ try { const raw = localStorage.getItem(key); return raw === null ? fallback : JSON.parse(raw); } catch { return fallback; } },
+  set(key, value){ try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable: keep going in memory */ } }
+};
+
+const saved = store.get("ordvaerk-progress", {}) || {};
+const progress = {
+  points: saved.points || 0,
+  bestStreak: saved.bestStreak || 0,
+  daily: saved.daily || 0,
+  date: saved.date || "",
+  topics: saved.topics || {},            // best % per topic quiz (kept from v1)
+  topicStats: saved.topicStats || {},    // { topic: { r: right, t: total } } across all modes
+  writingCompleted: saved.writingCompleted || [],
+  mistakes: saved.mistakes || [],        // keys of questions answered wrong and not yet fixed
+  dailySentence: saved.dailySentence || null
+};
+const writingDrafts = store.get("ordvaerk-writing-drafts", {}) || {};
+
+const state = {
+  mode: null, topic: null, quizSet: null, questions: [], index: 0, results: [],
+  answered: false, streak: 0, bestRun: 0, timer: null, nextTimer: null, timeLeft: 60,
+  buildAnswer: [], availableWords: [],
+  writingTask: null, writingTimer: null, writingSeconds: 0, writingRunning: false
+};
+
+const DAILY_GOAL = 10;
+const SPRINT_SECONDS = 60;
+
+/* ---------- Helpers ---------- */
+function todayKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function normalizeDaily(){ if (progress.date !== todayKey()) { progress.daily = 0; progress.date = todayKey(); save(); } }
+function save(){ store.set("ordvaerk-progress", progress); updateTopStats(); }
 function updateTopStats(){
   document.querySelector("#totalPoints").textContent = progress.points;
   document.querySelector("#bestStreak").textContent = progress.bestStreak;
 }
-function shuffle(list){ return [...list].sort(() => Math.random() - .5); }
-function escapeHtml(value){ return String(value).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c])); }
-function nextQuizSet(topic){
-  const key=`ordvaerk-last-set-${topic}`;
-  const previous=Number(localStorage.getItem(key) || 0);
-  const next=(previous % 5) + 1;
-  localStorage.setItem(key,String(next));
-  return next;
+function shuffle(list){
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [copy[i], copy[j]] = [copy[j], copy[i]]; }
+  return copy;
 }
-function questionsForSet(topic,set){
-  const pool=QUESTION_BANK.filter(question=>question.topic===topic);
-  const start=(set-1)*6;
-  return Array.from({length:10},(_,index)=>pool[(start+index)%pool.length]);
+function escapeHtml(value){ return String(value).replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c])); }
+function announce(text){ live.textContent = ""; setTimeout(() => { live.textContent = text; }, 30); }
+function keyOf(q){ return q.words ? `b:${q.answer}` : `c:${q.q}`; }
+function isBuild(q){ return Array.isArray(q.words); }
+function withShuffledOptions(q){ return isBuild(q) ? q : { ...q, options: shuffle(q.options) }; }
+
+const ITEM_BY_KEY = new Map([...QUESTION_BANK, ...BUILD_QUESTIONS].map(q => [keyOf(q), q]));
+function liveMistakes(){ return progress.mistakes.filter(k => ITEM_BY_KEY.has(k)); }
+
+const ICONS = {
+  mixed: '<path d="M4 7h3.5c2 0 3 1 4.5 3.5S14.5 17 16.5 17H20M17 14l3 3-3 3M4 17h3.5c1 0 1.7-.3 2.3-.9M14.2 7.9c.6-.6 1.3-.9 2.3-.9H20M17 4l3 3-3 3"/>',
+  build: '<rect x="3" y="14" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/><rect x="8.5" y="4" width="7" height="6" rx="1.5"/>',
+  sprint: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M10 2.5h4M12 2.5V6"/>',
+  writing: '<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/>',
+  review: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6M4 4v4.6h4.6"/><path d="M12 8v4.5l3 2"/>',
+  back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>'
+};
+function icon(name, cls = "icon"){ return `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`; }
+
+/* The signature element: a Danish sentence with a visible gap that fills in. */
+function sentenceHtml(q, choice = null){
+  const parts = q.q.split("___");
+  const before = escapeHtml(parts[0] || "");
+  const after = escapeHtml(parts.slice(1).join("___"));
+  let slot;
+  if (choice === null) slot = `<span class="slot"><span class="sr-only">(tomt felt)</span></span>`;
+  else if (choice === q.answer) slot = `<span class="slot is-filled is-correct">${escapeHtml(q.answer)}</span>`;
+  else slot = `<span class="slot is-filled is-wrong"><del>${escapeHtml(choice)}</del><ins>${escapeHtml(q.answer)}</ins></span>`;
+  return `${before}${slot}${after}`;
+}
+
+/* ---------- Recording answers ---------- */
+function recordAnswer(q, correct, { countDaily = true, pointsFor = 10 } = {}){
+  const key = keyOf(q);
+  if (correct) {
+    progress.points += pointsFor;
+    if (countDaily) progress.daily++;
+    progress.mistakes = progress.mistakes.filter(k => k !== key);
+  } else if (!progress.mistakes.includes(key)) {
+    progress.mistakes.unshift(key);
+    progress.mistakes = progress.mistakes.slice(0, 80);
+  }
+  const s = progress.topicStats[q.topic] || { r: 0, t: 0 };
+  s.t++; if (correct) s.r++;
+  progress.topicStats[q.topic] = s;
+  save();
+}
+
+/* ---------- Home ---------- */
+function dailyQuestion(){
+  const d = new Date();
+  const dayNumber = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  return QUESTION_BANK[(dayNumber * 37) % QUESTION_BANK.length];
+}
+
+function dailyCardHtml(){
+  const q = dailyQuestion();
+  const done = progress.dailySentence && progress.dailySentence.date === todayKey() ? progress.dailySentence.choice : null;
+  const correct = done === q.answer;
+  return `<section class="daily" aria-labelledby="daily-title">
+    <div class="daily-head"><strong id="daily-title">Dagens sætning</strong><span>${escapeHtml(TOPICS[q.topic].name)}</span></div>
+    <p class="sentence">${sentenceHtml(q, done)}</p>
+    <div class="daily-options" role="group" aria-label="Vælg ordet, der mangler">
+      ${q.options.map(o => {
+        const cls = done === null ? "" : o === q.answer ? " is-correct" : o === done ? " is-wrong" : "";
+        return `<button class="daily-option${cls}" data-daily-option="${escapeHtml(o)}"${done !== null ? " disabled" : ""}>${escapeHtml(o)}</button>`;
+      }).join("")}
+    </div>
+    ${done === null ? `<p class="daily-hint">Tryk på det ord, der mangler – eller brug tasterne 1–4.</p>` : ""}
+    ${done !== null ? `<div class="daily-feedback">
+      <p><strong>${correct ? "Rigtigt." : "Ikke helt."}</strong> ${escapeHtml(q.explain)}</p>
+      <button class="btn btn-on-deep" data-mode="mixed">Fortsæt med 10 spørgsmål ${icon("arrow")}</button>
+    </div>` : ""}
+  </section>`;
+}
+
+function topicRowHtml(key, topic){
+  const s = progress.topicStats[key];
+  const pct = s && s.t ? Math.round(s.r / s.t * 100) : null;
+  const stat = pct === null ? "Ikke øvet endnu" : `${pct} % rigtige ud af ${s.t} svar`;
+  return `<button class="topic" data-topic="${key}">
+    <span><span class="topic-name">${escapeHtml(topic.name)}</span><span class="topic-blurb">${escapeHtml(topic.blurb)}</span></span>
+    <span class="topic-meter"><span class="meter" aria-hidden="true"><span style="width:${pct ?? 0}%"></span></span><span class="topic-stat">${stat}</span></span>
+    <span class="topic-go">Øv ${icon("arrow")}</span>
+  </button>`;
 }
 
 function showHome(){
-  clearTimer();
-  const template = document.querySelector("#homeTemplate");
-  app.replaceChildren(template.content.cloneNode(true));
-  normalizeDaily(); updateTopStats();
-  document.querySelector("#dailyDone").textContent = Math.min(progress.daily,10);
-  const ring = document.querySelector("#dailyRing");
-  const pct = Math.min(progress.daily,10) / 10 * 360;
-  ring.style.background = `conic-gradient(var(--yellow) ${pct}deg, #334a65 ${pct}deg)`;
-  ring.style.borderColor = "transparent";
-  const practiced = Object.keys(progress.topics).length;
-  document.querySelector("#progressNote").textContent = `${practiced} af 5 emner øvet`;
-  const grid = document.querySelector("#topicGrid");
-  Object.entries(TOPICS).forEach(([key, topic], i) => {
-    const button = document.createElement("button");
-    button.className = "topic-card";
-    button.dataset.topic = key;
-    const score = progress.topics[key];
-    button.innerHTML = `${score !== undefined ? `<span class="topic-score">Bedst ${score}%</span>` : ""}<span class="topic-number">0${i+1}</span><h3>${topic.name}</h3><p>${topic.blurb}</p>`;
-    grid.append(button);
-  });
-  app.focus();
+  clearTimers();
+  normalizeDaily();
+  const done = Math.min(progress.daily, DAILY_GOAL);
+  const mistakes = liveMistakes().length;
+  const practiced = Object.keys(progress.topicStats).length;
+  app.innerHTML = `
+    <div class="hero">
+      <div class="hero-copy">
+        <div>
+          <h1>Træn dansk grammatik, én sætning ad gangen.</h1>
+          <p class="hero-lead">Korte øvelser på niveau A2–B1 med en forklaring efter hvert svar – og skriveopgaver som til danskprøven.</p>
+        </div>
+        <div class="goal${done >= DAILY_GOAL ? " done" : ""}">
+          <div class="goal-text"><span>Dagens mål</span><span><strong>${done} af ${DAILY_GOAL}</strong> rigtige svar${done >= DAILY_GOAL ? " – nået!" : ""}</span></div>
+          <div class="goal-ticks" aria-hidden="true">${Array.from({ length: DAILY_GOAL }, (_, i) => `<span class="${i < done ? "on" : ""}"></span>`).join("")}</div>
+        </div>
+      </div>
+      ${dailyCardHtml()}
+    </div>
+
+    <section class="section" aria-labelledby="modes-title">
+      <div class="section-head"><h2 id="modes-title">Vælg en træning</h2></div>
+      <div class="modes">
+        <button class="mode" data-mode="mixed">${icon("mixed", "icon mode-icon")}<span class="mode-name">Blandet quiz</span><span class="mode-desc">10 spørgsmål fra alle fem emner</span></button>
+        <button class="mode" data-mode="build">${icon("build", "icon mode-icon")}<span class="mode-name">Byg sætningen</span><span class="mode-desc">Sæt ordene i den rigtige rækkefølge</span></button>
+        <button class="mode" data-mode="sprint">${icon("sprint", "icon mode-icon")}<span class="mode-name">60 sekunders sprint</span><span class="mode-desc">Svar på så mange som muligt på ét minut</span></button>
+        <button class="mode" data-mode="review"${mistakes ? "" : " disabled"}>${icon("review", "icon mode-icon")}<span class="mode-name">Gentag dine fejl${mistakes ? `<span class="mode-count">${mistakes}</span>` : ""}</span><span class="mode-desc">${mistakes ? "Øv de spørgsmål, du har svaret forkert på" : "Her samles de spørgsmål, du svarer forkert på"}</span></button>
+        <button class="mode" data-mode="writing">${icon("writing", "icon mode-icon")}<span class="mode-name">Skrivetræning</span><span class="mode-desc">${WRITING_TASKS.length} opgaver: e-mails, opslag, ansøgninger og klager</span></button>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="topics-title">
+      <div class="section-head"><h2 id="topics-title">Øv et bestemt emne</h2><p>${practiced ? `${practiced} af 5 emner øvet` : "Hver emnequiz har 10 spørgsmål"}</p></div>
+      <div class="topics">${Object.entries(TOPICS).map(([k, t]) => topicRowHtml(k, t)).join("")}</div>
+    </section>
+
+    <footer class="site-foot">Din fremgang gemmes kun i denne browser. <button data-action="reset-progress">Nulstil fremgang</button></footer>`;
+  updateTopStats();
+  app.focus({ preventScroll: true });
 }
 
-function showWritingHub(){
-  clearTimer();
-  state.mode="writing";
-  const completeCount=progress.writingCompleted.length;
-  app.innerHTML=`<section class="writing-hub">
-    <div class="game-header">
-      <button class="icon-button" data-action="home" aria-label="Gå tilbage til forsiden">←</button>
-      <div class="game-heading"><p>Danskuddannelse 3 · Modul 3-4</p><h2>Skrivetræning</h2></div>
-      <span class="game-counter">${completeCount} / ${WRITING_TASKS.length} færdige</span>
+function answerDaily(choice){
+  const q = dailyQuestion();
+  if (progress.dailySentence && progress.dailySentence.date === todayKey()) return;
+  const correct = choice === q.answer;
+  progress.dailySentence = { date: todayKey(), choice };
+  normalizeDaily();
+  recordAnswer(q, correct);
+  announce(correct ? "Rigtigt svar" : `Forkert. Det rigtige svar er ${q.answer}`);
+  const y = window.scrollY;
+  showHome();
+  window.scrollTo(0, y);
+  document.querySelector(".daily-feedback .btn")?.focus({ preventScroll: true });
+}
+
+/* ---------- Quiz engine ---------- */
+function nextQuizSet(topic){
+  const key = `ordvaerk-last-set-${topic}`;
+  const next = (Number(store.get(key, 0)) % 5) + 1;
+  store.set(key, next);
+  return next;
+}
+function questionsForSet(topic, set){
+  const pool = QUESTION_BANK.filter(q => q.topic === topic);
+  const start = (set - 1) * 6;
+  return Array.from({ length: 10 }, (_, i) => pool[(start + i) % pool.length]);
+}
+
+function startQuiz(mode, topic = null){
+  clearTimers();
+  Object.assign(state, { mode, topic, quizSet: null, index: 0, results: [], answered: false, streak: 0, bestRun: 0, timeLeft: SPRINT_SECONDS, buildAnswer: [], availableWords: [] });
+  let list;
+  if (mode === "build") list = shuffle(BUILD_QUESTIONS);
+  else if (mode === "review") list = shuffle(liveMistakes().map(k => ITEM_BY_KEY.get(k))).slice(0, 10);
+  else if (mode === "topic") { state.quizSet = nextQuizSet(topic); list = shuffle(questionsForSet(topic, state.quizSet)); }
+  else if (mode === "sprint") list = shuffle(QUESTION_BANK);
+  else list = shuffle(QUESTION_BANK).slice(0, 10);
+  if (!list.length) return showHome();
+  state.questions = list.map(withShuffledOptions);
+  renderQuestion();
+  if (mode === "sprint") startSprintTimer();
+}
+
+function gameTitle(){
+  if (state.mode === "build") return "Byg sætningen";
+  if (state.mode === "sprint") return "60 sekunders sprint";
+  if (state.mode === "review") return "Gentag dine fejl";
+  if (state.mode === "topic") return TOPICS[state.topic].name;
+  return "Blandet quiz";
+}
+function gameSub(){
+  if (state.mode === "topic") return `Quiz ${state.quizSet} af 5`;
+  if (state.mode === "sprint") return "Svar hurtigt – der er ingen pause";
+  if (state.mode === "review") return "Svarer du rigtigt, forsvinder spørgsmålet fra listen";
+  if (state.mode === "build") return "Tryk på ordene i rækkefølge";
+  return "Alle emner";
+}
+
+function progressHtml(){
+  if (state.mode === "sprint") {
+    const pct = state.timeLeft / SPRINT_SECONDS * 100;
+    return `<div class="timer${state.timeLeft <= 10 ? " is-low" : ""}" role="progressbar" aria-label="Tid tilbage" aria-valuemin="0" aria-valuemax="${SPRINT_SECONDS}" aria-valuenow="${state.timeLeft}"><span id="timerBar" style="width:${pct}%"></span></div>`;
+  }
+  return `<div class="segments" aria-hidden="true">${state.questions.map((_, i) => {
+    const r = state.results[i];
+    const cls = r ? (r.correct ? "is-correct" : "is-wrong") : i === state.index ? "is-current" : "";
+    return `<span class="${cls}"></span>`;
+  }).join("")}</div>`;
+}
+
+function counterText(){
+  if (state.mode === "sprint") return `${state.timeLeft} sek.`;
+  return `${Math.min(state.index + 1, state.questions.length)} af ${state.questions.length}`;
+}
+
+function renderQuestion(){
+  const q = state.questions[state.index];
+  if (!q) return finishGame();
+  const build = isBuild(q);
+  app.innerHTML = `<section class="game">
+    <div class="game-head">
+      <button class="back" data-action="home" aria-label="Afslut og gå til forsiden">${icon("back")}</button>
+      <div><h1 class="game-title">${escapeHtml(gameTitle())}</h1><p class="game-sub">${escapeHtml(gameSub())}</p></div>
+      <span class="game-count" id="gameCounter">${counterText()}</span>
     </div>
-    <h1 class="prompt">Skriv dansk i virkelige situationer.</h1>
-    <p class="writing-lead">Vælg en opgave, skriv dit svar under tid, og brug tjeklisten, før du ser et eksempel.</p>
-    <div class="writing-task-grid">
-      ${WRITING_TASKS.map(task=>`<button class="writing-task-card" data-writing-task="${task.id}">
-        <span class="writing-task-top"><span class="writing-kind">${task.icon} ${escapeHtml(task.kind)}</span>${progress.writingCompleted.includes(task.id) ? '<span class="writing-done">✓ Færdig</span>' : ""}</span>
-        <h3>${escapeHtml(task.title)}</h3>
-        <p>${escapeHtml(task.situation)}</p>
-        <span class="task-facts"><span>◷ ${task.time} min.</span><span>✎ mindst ${task.minWords} ord</span></span>
-      </button>`).join("")}
-    </div>
+    <div id="progressArea">${progressHtml()}</div>
+    <article class="card" id="questionCard">
+      <div class="q-meta"><span class="q-topic">${escapeHtml(TOPICS[q.topic].name)}</span><span class="q-streak">${state.streak >= 2 ? `${state.streak} rigtige i træk` : ""}</span></div>
+      ${build ? buildHtml(q) : choiceHtml(q)}
+    </article>
   </section>`;
-  app.focus();
+  if (build) renderWordBanks();
+  app.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
+}
+
+function choiceHtml(q){
+  return `<h2 class="sentence" id="sentence">${sentenceHtml(q)}</h2>
+  <p class="q-instruction">Vælg det ord, der mangler.</p>
+  <div class="options" role="group" aria-label="Svarmuligheder">${q.options.map((o, i) => `<button class="option" data-option="${escapeHtml(o)}"><span>${escapeHtml(o)}</span><span class="kbd" aria-hidden="true">${i + 1}</span></button>`).join("")}</div>`;
+}
+
+function buildHtml(q){
+  state.buildAnswer = [];
+  state.availableWords = shuffle(q.words.map((word, id) => ({ word, id })));
+  return `<h2 class="sentence">${escapeHtml(q.prompt)}</h2>
+  <p class="q-instruction">Tryk på ordene i den rigtige rækkefølge. Tryk på et ord i sætningen for at fjerne det.</p>
+  <div class="build-line" id="answerZone" aria-label="Din sætning" data-empty="Din sætning kommer her"></div>
+  <div class="word-bank" id="wordBank" aria-label="Ord du kan vælge"></div>
+  <div class="build-actions"><button class="btn btn-secondary" data-action="reset-build" disabled>Start forfra</button><button class="btn btn-primary" data-action="check-build" disabled>Tjek svar</button></div>`;
+}
+
+function renderWordBanks(){
+  const bank = document.querySelector("#wordBank");
+  const zone = document.querySelector("#answerZone");
+  if (!bank || !zone) return;
+  bank.innerHTML = state.availableWords.map(item => `<button class="word" data-word-id="${item.id}">${escapeHtml(item.word)}</button>`).join("");
+  zone.innerHTML = state.buildAnswer.map(item => `<button class="word" data-answer-id="${item.id}" aria-label="Fjern ${escapeHtml(item.word)}">${escapeHtml(item.word)}</button>`).join("");
+  const any = state.buildAnswer.length > 0;
+  document.querySelector('[data-action="reset-build"]').disabled = !any;
+  document.querySelector('[data-action="check-build"]').disabled = state.availableWords.length > 0;
+}
+
+function registerResult(q, correct, choice){
+  state.results[state.index] = { q, correct, choice };
+  if (correct) { state.streak++; state.bestRun = Math.max(state.bestRun, state.streak); }
+  else state.streak = 0;
+  progress.bestStreak = Math.max(progress.bestStreak, state.bestRun);
+  normalizeDaily();
+  recordAnswer(q, correct, { pointsFor: state.mode === "sprint" ? 5 : 10 });
+  const area = document.querySelector("#progressArea");
+  if (area && state.mode !== "sprint") area.innerHTML = progressHtml();
+}
+
+function answerChoice(selected){
+  if (state.answered) return;
+  state.answered = true;
+  const q = state.questions[state.index];
+  const correct = selected === q.answer;
+  document.querySelectorAll(".option").forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.option === q.answer) btn.classList.add("is-correct");
+    else if (btn.dataset.option === selected) btn.classList.add("is-wrong");
+  });
+  document.querySelector("#sentence").innerHTML = sentenceHtml(q, selected);
+  registerResult(q, correct, selected);
+  announce(correct ? "Rigtigt svar" : `Forkert. Det rigtige svar er ${q.answer}`);
+  showFeedback(correct, q);
+  if (state.mode === "sprint") state.nextTimer = setTimeout(nextQuestion, correct ? 700 : 1600);
+}
+
+function checkBuild(){
+  if (state.answered) return;
+  state.answered = true;
+  const q = state.questions[state.index];
+  const response = state.buildAnswer.map(x => x.word).join(" ");
+  const correct = response === q.answer;
+  document.querySelectorAll(".word, .build-actions button").forEach(b => { b.disabled = true; });
+  document.querySelector("#answerZone").classList.add(correct ? "is-correct" : "is-wrong");
+  registerResult(q, correct, response);
+  announce(correct ? "Rigtigt svar" : `Forkert. Det rigtige svar er ${q.answer}`);
+  showFeedback(correct, q, correct ? "" : `Rigtig rækkefølge: <strong>${escapeHtml(q.answer)}.</strong>`);
+}
+
+function showFeedback(correct, q, extraHtml = ""){
+  const last = state.index === state.questions.length - 1;
+  const box = document.createElement("div");
+  box.className = `feedback${correct ? " is-good" : ""}`;
+  box.innerHTML = `<div><p class="feedback-title">${correct ? "Rigtigt." : "Ikke helt."}</p><p class="feedback-body">${extraHtml ? extraHtml + " " : ""}${escapeHtml(q.explain)}</p></div>
+    ${state.mode !== "sprint" ? `<button class="btn btn-primary" data-action="next">${last ? "Se resultat" : "Næste"} <span class="kbd" aria-hidden="true">Enter</span></button>` : ""}`;
+  document.querySelector("#questionCard").append(box);
+  box.querySelector("button")?.focus({ preventScroll: true });
+}
+
+function nextQuestion(){
+  clearTimeout(state.nextTimer); state.nextTimer = null;
+  state.index++; state.answered = false; state.buildAnswer = [];
+  renderQuestion();
+}
+
+function finishGame(){
+  clearTimers();
+  const results = state.results.filter(Boolean);
+  const attempts = results.length;
+  const right = results.filter(r => r.correct).length;
+  const pct = attempts ? Math.round(right / attempts * 100) : 0;
+  if (state.mode === "topic" && attempts) progress.topics[state.topic] = Math.max(progress.topics[state.topic] || 0, pct);
+  save();
+  const wrong = results.filter(r => !r.correct);
+  const heading = !attempts ? "Tiden løb ud" : pct >= 80 ? "Stærkt arbejde!" : pct >= 50 ? "Godt på vej." : "Øvelse gør mester.";
+  const lead = state.mode === "sprint"
+    ? `Du nåede ${attempts} spørgsmål på ét minut.`
+    : wrong.length ? "Kig på dine fejl herunder – de er også gemt under ‘Gentag dine fejl’." : "Du svarede rigtigt på alle spørgsmål.";
+  const points = right * (state.mode === "sprint" ? 5 : 10);
+  app.innerHTML = `<section class="game"><div class="card">
+    <div class="result-top">
+      <p class="result-score">${right}<small> / ${attempts}</small></p>
+      <div><h1>${heading}</h1><p>${lead}</p></div>
+    </div>
+    <div class="result-facts">
+      <span><strong>${pct} %</strong>rigtige</span>
+      <span><strong>${state.bestRun}</strong>bedste serie</span>
+      <span><strong>+${points}</strong>point</span>
+    </div>
+    ${wrong.length ? `<div class="review-list"><h2>Det skal du øve</h2>${wrong.map(r => `<div class="review-item">
+        <p class="sentence">${isBuild(r.q) ? escapeHtml(r.q.answer) + "." : sentenceHtml(r.q, r.choice)}</p>
+        <p>${escapeHtml(r.q.explain)}</p></div>`).join("")}</div>` : ""}
+    <div class="result-actions">
+      <button class="btn btn-primary" data-action="again">Prøv igen</button>
+      ${wrong.length && state.mode !== "review" ? `<button class="btn btn-secondary" data-mode="review">Gentag dine fejl</button>` : ""}
+      <button class="btn btn-secondary" data-action="home">Til forsiden</button>
+    </div>
+  </div></section>`;
+  app.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
+}
+
+function startSprintTimer(){
+  clearInterval(state.timer);
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    const counter = document.querySelector("#gameCounter");
+    const bar = document.querySelector("#timerBar");
+    if (counter) counter.textContent = `${state.timeLeft} sek.`;
+    if (bar) { bar.style.width = `${state.timeLeft / SPRINT_SECONDS * 100}%`; bar.parentElement.classList.toggle("is-low", state.timeLeft <= 10); }
+    if (state.timeLeft <= 0) finishGame();
+  }, 1000);
+}
+function clearTimers(){
+  if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  if (state.nextTimer) { clearTimeout(state.nextTimer); state.nextTimer = null; }
+  if (state.writingTimer) { clearInterval(state.writingTimer); state.writingTimer = null; state.writingRunning = false; }
+}
+
+/* ---------- Writing ---------- */
+function showWritingHub(){
+  clearTimers();
+  state.mode = "writing";
+  const kinds = [...new Set(WRITING_TASKS.map(t => t.kind))];
+  const doneCount = progress.writingCompleted.length;
+  app.innerHTML = `<section class="writing">
+    <div class="game-head">
+      <button class="back" data-action="home" aria-label="Gå til forsiden">${icon("back")}</button>
+      <div><h1 class="game-title">Skrivetræning</h1><p class="game-sub">Opgavetyper fra Danskuddannelse 3, modul 3 og 4</p></div>
+      <span class="game-count">${doneCount} af ${WRITING_TASKS.length} færdige</span>
+    </div>
+    <p class="writing-intro">Vælg en opgave, skriv dit svar med uret kørende, og gå tjeklisten igennem, før du ser et eksempel på et svar.</p>
+    ${kinds.map(kind => `<div class="task-group"><h2>${escapeHtml(kind)}</h2><div class="tasks">
+      ${WRITING_TASKS.filter(t => t.kind === kind).map(task => `<button class="task" data-writing-task="${task.id}">
+        <span class="task-title"><span>${escapeHtml(task.title)}</span>${progress.writingCompleted.includes(task.id) ? `<span class="task-done">${icon("check")} Færdig</span>` : ""}</span>
+        <span class="task-desc">${escapeHtml(task.situation)}</span>
+        <span class="task-facts">${task.time} minutter, mindst ${task.minWords} ord${writingDrafts[task.id] ? " – udkast gemt" : ""}</span>
+      </button>`).join("")}
+    </div></div>`).join("")}
+  </section>`;
+  app.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
 }
 
 function startWritingTask(id){
-  clearTimer();
-  const task=WRITING_TASKS.find(item=>item.id===id);
-  if(!task) return showWritingHub();
-  Object.assign(state,{mode:"writing",writingTask:task,writingSeconds:task.time*60,writingRunning:false});
-  const draft=writingDrafts[task.id] || "";
-  app.innerHTML=`<section class="writing-workspace">
-    <div class="task-nav">
-      <button class="icon-button" data-action="writing-home" aria-label="Tilbage til skriveopgaver">←</button>
-      <div class="game-heading"><p>${escapeHtml(task.kind)}</p><h2>${escapeHtml(task.title)}</h2></div>
+  clearTimers();
+  const task = WRITING_TASKS.find(t => t.id === id);
+  if (!task) return showWritingHub();
+  Object.assign(state, { mode: "writing", writingTask: task, writingSeconds: task.time * 60, writingRunning: false });
+  const draft = writingDrafts[task.id] || "";
+  app.innerHTML = `<section class="writing">
+    <div class="game-head">
+      <button class="back" data-action="writing-home" aria-label="Tilbage til skriveopgaverne">${icon("back")}</button>
+      <div><p class="game-title">${escapeHtml(task.kind)}</p><p class="game-sub">${task.time} minutter, mindst ${task.minWords} ord</p></div>
+      <span></span>
     </div>
-    <div class="writing-columns">
-      <aside class="brief-panel">
-        <span class="writing-kind">${task.icon} Opgave</span>
+    <div class="workspace">
+      <aside class="brief">
         <h1>${escapeHtml(task.title)}</h1>
-        <p class="brief-copy">${escapeHtml(task.situation)}</p>
-        ${task.source ? `<div class="source-message"><strong>Teksten, du skal svare på:</strong>${escapeHtml(task.source)}</div>` : ""}
-        <p class="kicker">Du skal fortælle:</p>
-        <ul class="requirement-list">${task.requirements.map(item=>`<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        <p>${escapeHtml(task.situation)}</p>
+        ${task.source ? `<div class="source"><span class="source-label">Teksten, du skal svare på</span>${escapeHtml(task.source)}</div>` : ""}
+        <h2>Du skal skrive om</h2>
+        <ul class="reqs">${task.requirements.map(r => `<li>${escapeHtml(r)}</li>`).join("")}</ul>
       </aside>
-      <section class="editor-panel" aria-label="Skrivefelt">
-        <div class="editor-toolbar">
-          <div class="timer-box"><span aria-hidden="true">◷</span><span class="timer-value" id="writerTimer">${formatTime(state.writingSeconds)}</span><button class="tiny-button" data-action="toggle-writing-timer">Start</button><button class="tiny-button" data-action="reset-writing-timer">Nulstil</button></div>
+      <section class="editor" aria-label="Skrivefelt">
+        <div class="editor-bar">
+          <div class="timer-box">${icon("sprint")}<span class="timer-value" id="writerTimer">${formatTime(state.writingSeconds)}</span>
+            <button class="chip-btn" data-action="toggle-writing-timer">Start uret</button><button class="chip-btn" data-action="reset-writing-timer">Nulstil</button></div>
           <span class="word-count" id="wordCount">0 / ${task.minWords} ord</span>
         </div>
-        <label class="sr-live" for="writingPad">Skriv dit svar på dansk</label>
-        <textarea class="writing-pad" id="writingPad" placeholder="Skriv dit svar her ...">${escapeHtml(draft)}</textarea>
-        <p class="draft-note" id="draftNote">${draft ? "Dit tidligere udkast er hentet." : "Dit udkast gemmes automatisk på denne enhed."}</p>
-        <div class="writer-tools">
-          <details>
-            <summary>💡 Nyttige sætninger</summary>
-            <div class="detail-content phrase-chips">${task.phrases.map(phrase=>`<button class="phrase-chip" data-phrase="${escapeHtml(phrase)}">${escapeHtml(phrase)}</button>`).join("")}</div>
-          </details>
-          <details>
-            <summary>✓ Tjek din tekst</summary>
-            <div class="detail-content check-grid">
-              ${task.requirements.map((item,i)=>`<label class="check-label"><input type="checkbox" data-self-check="requirement-${i}"><span>${escapeHtml(item)}</span></label>`).join("")}
-              <label class="check-label"><input type="checkbox" data-self-check="opening"><span>Jeg har en passende indledning og afslutning.</span></label>
-              <label class="check-label"><input type="checkbox" data-self-check="grammar"><span>Jeg har kontrolleret verber, ordstilling og punktummer.</span></label>
-            </div>
-          </details>
-          <details id="modelDetails">
-            <summary>👀 Se et eksempel på et svar</summary>
-            <div class="detail-content model-answer">${escapeHtml(task.model)}</div>
-          </details>
-          <div class="writer-actions">
-            <button class="secondary-button" data-action="new-writing-task">Vælg en anden opgave</button>
-            <button class="primary-button" data-action="complete-writing">Vurder min tekst</button>
+        <label class="sr-only" for="writingPad">Skriv dit svar på dansk</label>
+        <textarea class="pad" id="writingPad" placeholder="Skriv dit svar her …" spellcheck="true" lang="da">${escapeHtml(draft)}</textarea>
+        <p class="draft-note" id="draftNote">${draft ? "Dit tidligere udkast er hentet." : "Dit udkast gemmes automatisk i denne browser."}</p>
+        <div class="tools">
+          <details><summary>Nyttige sætninger</summary><div class="tool-body phrases">${task.phrases.map(p => `<button class="phrase" data-phrase="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join("")}</div></details>
+          <details><summary>Tjek din tekst</summary><div class="tool-body checks">
+            ${task.requirements.map((r, i) => `<label class="check"><input type="checkbox" data-self-check="req-${i}"><span>${escapeHtml(r)}</span></label>`).join("")}
+            <label class="check"><input type="checkbox" data-self-check="opening"><span>Jeg har en passende indledning og afslutning.</span></label>
+            <label class="check"><input type="checkbox" data-self-check="grammar"><span>Jeg har kontrolleret verber, ordstilling og tegnsætning.</span></label>
+          </div></details>
+          <details><summary>Se et eksempel på et svar</summary><div class="tool-body model">${escapeHtml(task.model)}</div></details>
+          <div class="tool-actions">
+            <button class="btn btn-secondary" data-action="writing-home">Vælg en anden opgave</button>
+            <button class="btn btn-primary" data-action="complete-writing">Markér som færdig</button>
           </div>
           <div id="writerResult" aria-live="polite"></div>
         </div>
@@ -404,268 +761,174 @@ function startWritingTask(id){
     </div>
   </section>`;
   updateWordCount();
-  app.focus();
+  app.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
 }
 
-function countWords(text){
-  const cleaned=text.trim();
-  return cleaned ? cleaned.split(/\s+/).length : 0;
-}
-function formatTime(seconds){
-  const minutes=Math.floor(seconds/60);
-  return `${String(minutes).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
-}
+function countWords(text){ const t = text.trim(); return t ? t.split(/\s+/).length : 0; }
+function formatTime(seconds){ return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`; }
 function updateWordCount(){
-  const pad=document.querySelector("#writingPad");
-  const display=document.querySelector("#wordCount");
-  if(!pad || !display || !state.writingTask) return;
-  const words=countWords(pad.value);
-  display.textContent=`${words} / ${state.writingTask.minWords} ord`;
-  display.classList.toggle("met",words>=state.writingTask.minWords);
+  const pad = document.querySelector("#writingPad");
+  const display = document.querySelector("#wordCount");
+  if (!pad || !display || !state.writingTask) return;
+  const words = countWords(pad.value);
+  display.textContent = `${words} / ${state.writingTask.minWords} ord`;
+  display.classList.toggle("is-met", words >= state.writingTask.minWords);
 }
+let draftSaveTimer = null;
 function saveWritingDraft(){
-  const pad=document.querySelector("#writingPad");
-  if(!pad || !state.writingTask) return;
-  writingDrafts[state.writingTask.id]=pad.value;
-  localStorage.setItem("ordvaerk-writing-drafts",JSON.stringify(writingDrafts));
-  const note=document.querySelector("#draftNote");
-  if(note) note.textContent="Udkast gemt.";
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(() => {
+    const pad = document.querySelector("#writingPad");
+    if (!pad || !state.writingTask) return;
+    writingDrafts[state.writingTask.id] = pad.value;
+    store.set("ordvaerk-writing-drafts", writingDrafts);
+    const note = document.querySelector("#draftNote");
+    if (note) note.textContent = "Udkast gemt.";
+  }, 400);
 }
+function setTimerButton(text){ const b = document.querySelector('[data-action="toggle-writing-timer"]'); if (b) b.textContent = text; }
 function updateWritingTimer(){
-  const display=document.querySelector("#writerTimer");
-  if(display) display.textContent=state.writingSeconds<=0 ? "Tiden er gået" : formatTime(state.writingSeconds);
+  const display = document.querySelector("#writerTimer");
+  if (!display) return;
+  display.textContent = state.writingSeconds <= 0 ? "Tiden er gået" : formatTime(state.writingSeconds);
+  display.classList.toggle("is-over", state.writingSeconds <= 0);
 }
 function toggleWritingTimer(){
-  if(state.writingRunning){
-    clearInterval(state.writingTimer); state.writingTimer=null; state.writingRunning=false;
-  } else {
-    if(state.writingSeconds<=0) state.writingSeconds=state.writingTask.time*60;
-    state.writingRunning=true;
-    state.writingTimer=setInterval(()=>{
-      state.writingSeconds--;
-      updateWritingTimer();
-      if(state.writingSeconds<=0){
-        clearInterval(state.writingTimer); state.writingTimer=null; state.writingRunning=false;
-        const button=document.querySelector('[data-action="toggle-writing-timer"]');
-        if(button) button.textContent="Start igen";
-      }
-    },1000);
+  if (state.writingRunning) {
+    clearInterval(state.writingTimer); state.writingTimer = null; state.writingRunning = false;
+    setTimerButton("Fortsæt");
+    return;
   }
-  const button=document.querySelector('[data-action="toggle-writing-timer"]');
-  if(button) button.textContent=state.writingRunning ? "Pause" : "Start";
+  if (state.writingSeconds <= 0) state.writingSeconds = state.writingTask.time * 60;
+  state.writingRunning = true;
+  setTimerButton("Pause");
+  state.writingTimer = setInterval(() => {
+    state.writingSeconds--;
+    updateWritingTimer();
+    if (state.writingSeconds <= 0) {
+      clearInterval(state.writingTimer); state.writingTimer = null; state.writingRunning = false;
+      setTimerButton("Start igen");
+      announce("Tiden er gået");
+    }
+  }, 1000);
 }
 function resetWritingTimer(){
-  if(state.writingTimer) clearInterval(state.writingTimer);
-  state.writingTimer=null; state.writingRunning=false; state.writingSeconds=state.writingTask.time*60;
+  if (state.writingTimer) clearInterval(state.writingTimer);
+  Object.assign(state, { writingTimer: null, writingRunning: false, writingSeconds: state.writingTask.time * 60 });
   updateWritingTimer();
-  const button=document.querySelector('[data-action="toggle-writing-timer"]');
-  if(button) button.textContent="Start";
+  setTimerButton("Start uret");
 }
 function completeWritingTask(){
-  const task=state.writingTask;
-  const pad=document.querySelector("#writingPad");
-  const result=document.querySelector("#writerResult");
-  if(!task || !pad || !result) return;
-  const words=countWords(pad.value);
-  const checks=[...document.querySelectorAll("[data-self-check]")];
-  const checked=checks.filter(box=>box.checked).length;
-  const enoughWords=words>=task.minWords;
-  const allChecked=checked===checks.length;
-  if(enoughWords && allChecked){
-    if(!progress.writingCompleted.includes(task.id)){
-      progress.writingCompleted.push(task.id); progress.points+=25; save();
-    }
-    result.innerHTML=`<div class="writer-result"><strong>Flot arbejde!</strong><div>Du har skrevet ${words} ord og gennemgået hele tjeklisten. Opgaven er markeret som færdig, og du har fået 25 point.</div></div>`;
+  const task = state.writingTask;
+  const pad = document.querySelector("#writingPad");
+  const result = document.querySelector("#writerResult");
+  if (!task || !pad || !result) return;
+  const words = countWords(pad.value);
+  const checks = [...document.querySelectorAll("[data-self-check]")];
+  const checked = checks.filter(b => b.checked).length;
+  const enough = words >= task.minWords;
+  const allChecked = checked === checks.length;
+  if (enough && allChecked) {
+    const first = !progress.writingCompleted.includes(task.id);
+    if (first) { progress.writingCompleted.push(task.id); progress.points += 25; save(); }
+    result.innerHTML = `<div class="writer-result is-good"><strong>Flot arbejde.</strong> Du har skrevet ${words} ord og gået hele tjeklisten igennem.${first ? " Opgaven er markeret som færdig, og du har fået 25 point." : ""}</div>`;
   } else {
-    const missing=[];
-    if(!enoughWords) missing.push(`skriv mindst ${task.minWords-words} ord mere`);
-    if(!allChecked) missing.push(`gennemgå ${checks.length-checked} punkt${checks.length-checked===1 ? "" : "er"} på tjeklisten`);
-    result.innerHTML=`<div class="feedback"><strong>Næsten færdig</strong><div>Før du afslutter: ${missing.join(" og ")}.</div></div>`;
-  }
-}
-
-function startQuiz(mode, topic=null){
-  Object.assign(state,{mode,topic,quizSet:null,index:0,correct:0,answered:false,streak:0,bestRun:0,timeLeft:60,buildAnswer:[]});
-  if(mode === "build") state.questions = shuffle(BUILD_QUESTIONS);
-  else {
-    if(topic && mode !== "sprint"){
-      state.quizSet=nextQuizSet(topic);
-      state.questions=shuffle(questionsForSet(topic,state.quizSet));
-    } else {
-      const pool=topic ? QUESTION_BANK.filter(q=>q.topic===topic) : QUESTION_BANK;
-      state.questions=mode === "sprint" ? shuffle(pool) : shuffle(pool).slice(0,10);
+    const missing = [];
+    if (!enough) missing.push(`skriv mindst ${task.minWords - words} ord mere`);
+    if (!allChecked) {
+      const left = checks.length - checked;
+      missing.push(`sæt flueben ved ${left} punkt${left === 1 ? "" : "er"} mere under ‘Tjek din tekst’`);
+      checks[0].closest("details").open = true;
     }
+    result.innerHTML = `<div class="writer-result"><strong>Næsten færdig.</strong> Før du kan markere opgaven som færdig: ${missing.join(" og ")}.</div>`;
   }
-  renderQuestion();
-  if(mode === "sprint") startTimer();
 }
 
-function gameTitle(){
-  if(state.mode === "build") return "Byg sætningen";
-  if(state.mode === "sprint") return "60 sekunders sprint";
-  if(state.topic) return `${TOPICS[state.topic].name}${state.quizSet ? ` · Quiz ${state.quizSet} af 5` : ""}`;
-  return "Blandet quiz";
-}
-
-function renderQuestion(){
-  const q = state.questions[state.index];
-  if(!q) return finishGame();
-  const isSprint = state.mode === "sprint";
-  const total = state.mode === "sprint" ? "∞" : state.questions.length;
-  const progressWidth = isSprint ? (state.timeLeft/60*100) : ((state.index)/state.questions.length*100);
-  app.innerHTML = `<section class="game-view">
-    <div class="game-header">
-      <button class="icon-button" data-action="home" aria-label="Afslut og gå tilbage">←</button>
-      <div class="game-heading"><p>${isSprint ? "Tid tilbage" : "Træning"}</p><h2>${gameTitle()}</h2></div>
-      <span class="game-counter" id="gameCounter">${isSprint ? state.timeLeft + " sek." : `${state.index+1} / ${total}`}</span>
-    </div>
-    <div class="progress-track ${isSprint ? "timer-track" : ""}"><div class="progress-bar" id="progressBar" style="width:${progressWidth}%"></div></div>
-    <article class="question-card">
-      <div class="question-meta"><span class="tag">${TOPICS[q.topic].name}</span><span class="streak">${state.streak ? `⚡ ${state.streak} i træk` : ""}</span></div>
-      ${state.mode === "build" ? buildMarkup(q) : choiceMarkup(q)}
-      <div class="sr-live" aria-live="polite" id="liveRegion"></div>
-    </article>
-  </section>`;
-  app.focus();
-}
-
-function choiceMarkup(q){
-  return `<h1 class="prompt">${escapeHtml(q.q)}<span class="hint">Vælg det rigtige svar.</span></h1>
-  <div class="options">${q.options.map((o,i)=>`<button class="option" data-option="${escapeHtml(o)}"><span>${String.fromCharCode(65+i)}.</span> ${escapeHtml(o)}</button>`).join("")}</div>`;
-}
-
-function buildMarkup(q){
-  state.buildAnswer = [];
-  state.availableWords = shuffle(q.words.map((word,i)=>({word,id:i})));
-  return `<h1 class="prompt">${escapeHtml(q.prompt)}<span class="hint">Tryk på ordene i den rigtige rækkefølge.</span></h1>
-  <div class="answer-zone" id="answerZone" aria-label="Din sætning"></div>
-  <div class="word-bank" id="wordBank" aria-label="Ord du kan vælge"></div>
-  <div class="build-actions"><button class="secondary-button" data-action="reset-build" disabled>Start forfra</button><button class="primary-button" data-action="check-build" disabled>Tjek svar</button></div>`;
-}
-
-function renderWordBanks(){
-  const bank = document.querySelector("#wordBank");
-  const zone = document.querySelector("#answerZone");
-  if(!bank || !zone) return;
-  bank.innerHTML = state.availableWords.map(item=>`<button class="word-token" data-word-id="${item.id}">${escapeHtml(item.word)}</button>`).join("");
-  zone.innerHTML = state.buildAnswer.map(item=>`<button class="word-token" data-answer-id="${item.id}">${escapeHtml(item.word)}</button>`).join("");
-  document.querySelector('[data-action="reset-build"]').disabled = !state.buildAnswer.length;
-  document.querySelector('[data-action="check-build"]').disabled = !state.buildAnswer.length;
-}
-
-function answerChoice(selected, button){
-  if(state.answered) return;
-  state.answered = true;
-  const q = state.questions[state.index];
-  const correct = selected === q.answer;
-  document.querySelectorAll(".option").forEach(btn => {
-    btn.disabled = true;
-    if(btn.dataset.option === q.answer) btn.classList.add("correct");
-  });
-  if(!correct) button.classList.add("wrong");
-  recordAnswer(correct, q.topic);
-  showFeedback(correct,q);
-  if(state.mode === "sprint") state.nextTimer=setTimeout(nextQuestion, correct ? 650 : 1050);
-}
-
-function checkBuild(){
-  if(state.answered) return;
-  state.answered = true;
-  const q = state.questions[state.index];
-  const response = state.buildAnswer.map(x=>x.word).join(" ");
-  const correct = response === q.answer;
-  document.querySelectorAll(".word-token").forEach(b=>b.disabled=true);
-  document.querySelectorAll(".build-actions button").forEach(b=>b.disabled=true);
-  recordAnswer(correct,q.topic);
-  showFeedback(correct,q, correct ? null : `Rigtigt svar: ${q.answer}.`);
-}
-
-function recordAnswer(correct, topic){
-  if(correct){ state.correct++; state.streak++; state.bestRun=Math.max(state.bestRun,state.streak); progress.points += state.mode === "sprint" ? 5 : 10; progress.daily++; }
-  else state.streak=0;
-  progress.bestStreak=Math.max(progress.bestStreak,state.bestRun);
+/* ---------- Events ---------- */
+function resetProgress(){
+  if (!confirm("Vil du slette alle point, statistik, fejl og skriveudkast i denne browser?")) return;
+  Object.assign(progress, { points: 0, bestStreak: 0, daily: 0, date: todayKey(), topics: {}, topicStats: {}, writingCompleted: [], mistakes: [], dailySentence: null });
+  Object.keys(writingDrafts).forEach(k => delete writingDrafts[k]);
+  store.set("ordvaerk-writing-drafts", writingDrafts);
   save();
-  document.querySelector("#liveRegion").textContent = correct ? "Rigtigt svar" : "Forkert svar";
+  showHome();
 }
 
-function showFeedback(correct,q,extra=""){
-  const box=document.createElement("div");
-  box.className=`feedback ${correct ? "good" : ""}`;
-  box.innerHTML=`<strong>${correct ? "Rigtigt!" : "Ikke helt."}</strong>${extra ? `<div>${escapeHtml(extra)}</div>` : ""}<div>${escapeHtml(q.explain)}</div>${state.mode !== "sprint" ? `<button class="next-button" data-action="next">${state.index === state.questions.length-1 ? "Se resultat" : "Næste spørgsmål"} →</button>` : ""}`;
-  document.querySelector(".question-card").append(box);
-  box.querySelector("button")?.focus();
-}
-
-function nextQuestion(){ state.index++; state.answered=false; state.buildAnswer=[]; renderQuestion(); if(state.mode === "build") renderWordBanks(); }
-
-function finishGame(){
-  clearTimer();
-  const attempts = state.mode === "sprint" ? state.index : state.questions.length;
-  const percentage = attempts ? Math.round(state.correct/attempts*100) : 0;
-  if(state.topic) progress.topics[state.topic]=Math.max(progress.topics[state.topic] || 0,percentage);
-  save();
-  const heading = percentage >= 80 ? "Stærkt arbejde!" : percentage >= 50 ? "Godt på vej!" : "Øvelse gør mester";
-  app.innerHTML=`<section class="game-view"><div class="result-card">
-    <div class="result-badge">${percentage}%</div>
-    <p class="kicker">Træningen er færdig</p><h2>${heading}</h2>
-    <p>${state.mode === "sprint" ? `Du nåede ${attempts} spørgsmål på ét minut.` : "Du har trænet reglerne og fået en forklaring efter hvert svar."}</p>
-    <div class="result-stats">
-      <div class="result-stat"><strong>${state.correct}/${attempts}</strong><span>rigtige svar</span></div>
-      <div class="result-stat"><strong>${state.bestRun}</strong><span>bedste serie</span></div>
-      <div class="result-stat"><strong>+${state.correct*(state.mode === "sprint" ? 5 : 10)}</strong><span>point</span></div>
-    </div>
-    <div class="result-actions"><button class="secondary-button" data-action="home">Til forsiden</button><button class="primary-button" data-action="again">Prøv igen</button></div>
-  </div></section>`;
-  app.focus();
-}
-
-function startTimer(){
-  clearTimer();
-  state.timer=setInterval(()=>{
-    state.timeLeft--;
-    const counter=document.querySelector("#gameCounter");
-    const bar=document.querySelector("#progressBar");
-    if(counter) counter.textContent=`${state.timeLeft} sek.`;
-    if(bar) bar.style.width=`${state.timeLeft/60*100}%`;
-    if(state.timeLeft<=0) finishGame();
-  },1000);
-}
-function clearTimer(){
-  if(state.timer){ clearInterval(state.timer); state.timer=null; }
-  if(state.nextTimer){ clearTimeout(state.nextTimer); state.nextTimer=null; }
-  if(state.writingTimer){ clearInterval(state.writingTimer); state.writingTimer=null; state.writingRunning=false; }
+function startMode(mode){
+  if (mode === "writing") return showWritingHub();
+  startQuiz(mode);
 }
 
 document.addEventListener("click", event => {
-  const home=event.target.closest('[data-action="home"]'); if(home){ showHome(); return; }
-  const mode=event.target.closest("[data-mode]"); if(mode){ if(mode.dataset.mode==="writing") showWritingHub(); else { startQuiz(mode.dataset.mode); if(mode.dataset.mode === "build") renderWordBanks(); } return; }
-  const writingTask=event.target.closest("[data-writing-task]"); if(writingTask){ startWritingTask(writingTask.dataset.writingTask); return; }
-  if(event.target.closest('[data-action="writing-home"]') || event.target.closest('[data-action="new-writing-task"]')){ showWritingHub(); return; }
-  if(event.target.closest('[data-action="toggle-writing-timer"]')){ toggleWritingTimer(); return; }
-  if(event.target.closest('[data-action="reset-writing-timer"]')){ resetWritingTimer(); return; }
-  if(event.target.closest('[data-action="complete-writing"]')){ completeWritingTask(); return; }
-  const phrase=event.target.closest("[data-phrase]"); if(phrase){
-    const pad=document.querySelector("#writingPad");
-    if(pad){
-      const addition=(pad.value && !/\s$/.test(pad.value) ? " " : "")+phrase.dataset.phrase+" ";
-      pad.setRangeText(addition,pad.selectionStart,pad.selectionEnd,"end");
-      pad.dispatchEvent(new Event("input",{bubbles:true}));
-      pad.focus();
-    }
+  const t = event.target;
+  const on = sel => t.closest(sel);
+  let el;
+  if (on('[data-action="home"]')) return showHome();
+  if ((el = on("[data-daily-option]"))) return answerDaily(el.dataset.dailyOption);
+  if ((el = on("[data-mode]"))) return startMode(el.dataset.mode);
+  if ((el = on("[data-topic]"))) return startQuiz("topic", el.dataset.topic);
+  if ((el = on("[data-writing-task]"))) return startWritingTask(el.dataset.writingTask);
+  if (on('[data-action="writing-home"]')) return showWritingHub();
+  if (on('[data-action="toggle-writing-timer"]')) return toggleWritingTimer();
+  if (on('[data-action="reset-writing-timer"]')) return resetWritingTimer();
+  if (on('[data-action="complete-writing"]')) return completeWritingTask();
+  if (on('[data-action="reset-progress"]')) return resetProgress();
+  if ((el = on("[data-phrase]"))) {
+    const pad = document.querySelector("#writingPad");
+    if (!pad) return;
+    const before = pad.value.slice(0, pad.selectionStart);
+    const addition = (before && !/\s$/.test(before) ? " " : "") + el.dataset.phrase + " ";
+    pad.setRangeText(addition, pad.selectionStart, pad.selectionEnd, "end");
+    pad.dispatchEvent(new Event("input", { bubbles: true }));
+    pad.focus();
     return;
   }
-  const topic=event.target.closest("[data-topic]"); if(topic){ startQuiz("topic",topic.dataset.topic); return; }
-  const option=event.target.closest("[data-option]"); if(option){ answerChoice(option.dataset.option,option); return; }
-  const next=event.target.closest('[data-action="next"]'); if(next){ nextQuestion(); return; }
-  const again=event.target.closest('[data-action="again"]'); if(again){ const {mode,topic}=state; startQuiz(mode,topic); if(mode==="build") renderWordBanks(); return; }
-  const word=event.target.closest("[data-word-id]"); if(word && !state.answered){ const id=Number(word.dataset.wordId); const idx=state.availableWords.findIndex(x=>x.id===id); state.buildAnswer.push(state.availableWords.splice(idx,1)[0]); renderWordBanks(); return; }
-  const answerWord=event.target.closest("[data-answer-id]"); if(answerWord && !state.answered){ const id=Number(answerWord.dataset.answerId); const idx=state.buildAnswer.findIndex(x=>x.id===id); state.availableWords.push(state.buildAnswer.splice(idx,1)[0]); renderWordBanks(); return; }
-  if(event.target.closest('[data-action="reset-build"]')){ state.availableWords.push(...state.buildAnswer); state.buildAnswer=[]; renderWordBanks(); return; }
-  if(event.target.closest('[data-action="check-build"]')){ checkBuild(); }
+  if ((el = on("[data-option]"))) return answerChoice(el.dataset.option);
+  if (on('[data-action="next"]')) return nextQuestion();
+  if (on('[data-action="again"]')) return startQuiz(state.mode, state.topic);
+  if ((el = on("[data-word-id]")) && !state.answered) {
+    const id = Number(el.dataset.wordId);
+    const i = state.availableWords.findIndex(x => x.id === id);
+    state.buildAnswer.push(state.availableWords.splice(i, 1)[0]);
+    renderWordBanks();
+    const nextWord = document.querySelector("#wordBank .word") || document.querySelector('[data-action="check-build"]');
+    nextWord?.focus({ preventScroll: true });
+    return;
+  }
+  if ((el = on("[data-answer-id]")) && !state.answered) {
+    const id = Number(el.dataset.answerId);
+    const i = state.buildAnswer.findIndex(x => x.id === id);
+    state.availableWords.push(state.buildAnswer.splice(i, 1)[0]);
+    renderWordBanks();
+    return;
+  }
+  if (on('[data-action="reset-build"]')) { state.availableWords.push(...state.buildAnswer); state.buildAnswer = []; renderWordBanks(); return; }
+  if (on('[data-action="check-build"]')) return checkBuild();
 });
 
-document.addEventListener("input",event=>{
-  if(event.target.id==="writingPad"){ updateWordCount(); saveWritingDraft(); }
+/* Keyboard: 1–4 picks an answer, Enter goes to the next question. */
+document.addEventListener("keydown", event => {
+  if (event.target.closest("textarea, input")) return;
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (/^[1-4]$/.test(event.key)) {
+    const daily = document.querySelectorAll("[data-daily-option]:not(:disabled)");
+    const opts = document.querySelectorAll(".option:not(:disabled)");
+    const list = opts.length ? opts : daily;
+    const target = list[Number(event.key) - 1];
+    if (target) { event.preventDefault(); target.click(); }
+    return;
+  }
+  if (event.key === "Enter" && state.answered) {
+    const next = document.querySelector('[data-action="next"]');
+    if (next && document.activeElement !== next) { event.preventDefault(); next.click(); }
+  }
 });
 
-normalizeDaily(); updateTopStats(); showHome();
+document.addEventListener("input", event => {
+  if (event.target.id === "writingPad") { updateWordCount(); saveWritingDraft(); }
+});
+
+normalizeDaily();
+updateTopStats();
+showHome();
