@@ -4,9 +4,15 @@
   "use strict";
   root.UI = {
     appName: "Danish Grammar Trainer",
+<<<<<<< HEAD
     tagline: "Train your grammar for a better score in the PD3 language test",
     homeTitle: "Choose your level",
     homeLead: "Short quizzes built from Danish course books to help you pass Prøve i Dansk 3 (PD3). Pick the level that fits you, then choose what to practise.",
+=======
+    tagline: "Danish grammar, one step at a time",
+    homeTitle: "Choose your level",
+    homeLead: "Short quizzes built from Danish course books. Pick the level that fits you, then choose what to practise.",
+>>>>>>> 969428e83d1f07ff51778b1541e688761ec21e98
     points: "points",
     streak: "Best streak",
 

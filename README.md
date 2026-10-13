@@ -2,7 +2,11 @@
 
 # 🇩🇰 Danish Grammar Trainer
 
+<<<<<<< HEAD
 ### Train your grammar for a better score in the PD3 language test (Prøve i Dansk 3)
+=======
+### Short Danish grammar quizzes at three levels, from A1 to B1
+>>>>>>> 969428e83d1f07ff51778b1541e688761ec21e98
 
 ### 👉 [**Open the app**](https://alketcecaj12.github.io/dansk_grammatik_traening_app/) 👈
 
@@ -59,7 +63,11 @@ flowchart TD
 
 ## 🎮 Question types
 
+<<<<<<< HEAD
 - ✅ **Multiple choice:** pick the right word out of four options (keys 1–4 work too)
+=======
+- ✅ **Multiple choice:** pick the word that fills the gap (keys 1–4 work too)
+>>>>>>> 969428e83d1f07ff51778b1541e688761ec21e98
 - ⌨️ **Type the form:** write the missing word, with æ ø å buttons
 - 🧩 **Build the sentence:** tap word tiles in the right order
 - 🕒 **Clock:** a drawn clock face with new times every round; the wrong options are the typical mistakes
@@ -81,7 +89,11 @@ So all words right gives 100%, and one missing word in a three-word sentence giv
 - 📅 **27 questions** about talking about time
 - 🕒 **Clock questions generated fresh** every round
 - ✍️ **242 writing phrases** (82 Beginner, 80 Beginner–intermediate, 80 Intermediate–advanced)
+<<<<<<< HEAD
 - 💬 A short English explanation of why the answer is right, after every question
+=======
+- 💬 A one-line English explanation for every answer
+>>>>>>> 969428e83d1f07ff51778b1541e688761ec21e98
 - 🏆 Points, best streak and best score per topic, saved in the browser
 - 🌗 Light and dark mode, responsive layout, keyboard friendly
 
