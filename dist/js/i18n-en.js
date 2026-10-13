@@ -45,6 +45,7 @@
     whyLabel: "Why",
     typeHere: "Type your answer",
     buildSentence: "Tap the words in the right order.",
+    buildQuestion: "Tap the words in the right order. This sentence is a question.",
     clearTiles: "Start again",
     pickAnswer: "Choose the right word.",
     typeForm: "Type the missing word.",

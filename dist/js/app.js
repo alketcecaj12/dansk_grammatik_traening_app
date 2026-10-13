@@ -151,7 +151,8 @@
     } else if (item.type === "order") {
       item._tiles = shuffleTiles(tilesFor(item.a));
       item._placed = [];
-      body = '<p class="q-instruction">' + esc(UI.buildSentence) + "</p>" +
+      item._end = (item.a.trim().match(/[.?!]$/) || [""])[0];
+      body = '<p class="q-instruction">' + esc(item._end === "?" ? UI.buildQuestion : UI.buildSentence) + "</p>" +
         '<div class="build-line" id="buildLine" data-empty="…"></div><div class="word-bank" id="wordBank"></div>' +
         '<div class="build-actions"><button class="btn btn-secondary" data-action="clear-tiles">' + esc(UI.clearTiles) + "</button>" +
         '<button class="btn btn-primary" data-action="check-order" disabled>' + esc(UI.check) + "</button></div>";
@@ -182,7 +183,8 @@
   function drawTiles() {
     var item = round.items[round.index];
     var line = document.getElementById("buildLine"), bank = document.getElementById("wordBank");
-    line.innerHTML = item._placed.map(function (t) { return '<button class="word" data-unplace="' + t.id + '">' + esc(t.word) + "</button>"; }).join("");
+    line.innerHTML = item._placed.map(function (t) { return '<button class="word" data-unplace="' + t.id + '">' + esc(t.word) + "</button>"; }).join("") +
+      (item._end ? '<span class="end-mark" aria-hidden="true">' + item._end + "</span>" : "");
     bank.innerHTML = item._tiles.map(function (t) {
       var used = item._placed.some(function (p) { return p.id === t.id; });
       return '<button class="word" data-place="' + t.id + '"' + (used ? ' disabled style="visibility:hidden"' : "") + ">" + esc(t.word) + "</button>";
@@ -257,10 +259,13 @@
     var item = round.items[round.index];
     if (round.results[round.index]) return;
     var built = item._placed.map(function (t) { return t.word; }).join(" ");
+    built = built.charAt(0).toUpperCase() + built.slice(1) + (item._end || "");
     var accepted = [item.a].concat(item.alt || []).map(norm);
     var correct = accepted.indexOf(norm(built)) !== -1;
     var line = document.getElementById("buildLine");
     line.classList.add(correct ? "is-correct" : "is-wrong");
+    var first = line.querySelector(".word");
+    if (first) first.textContent = first.textContent.charAt(0).toUpperCase() + first.textContent.slice(1);
     app.querySelectorAll(".word").forEach(function (b) { b.disabled = true; });
     app.querySelectorAll(".build-actions .btn").forEach(function (b) { b.disabled = true; });
     finishQuestion(correct, built);

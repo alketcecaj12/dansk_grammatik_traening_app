@@ -172,6 +172,9 @@ main { width: var(--page); margin: 0 auto; padding: 40px 0 96px; }
 
 .build-line { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; min-height: 64px; margin-top: 8px; padding: 8px 2px 10px; border-bottom: 2px solid var(--ink); }
 .build-line:empty::before { content: attr(data-empty); color: var(--muted); font-size: var(--step--1); padding-bottom: 6px; }
+.end-mark { align-self: flex-end; padding: 0 2px 6px; font-size: calc(var(--step-1) * 1.5); font-weight: 800; line-height: 1; color: var(--cobalt); }
+.build-line.is-correct .end-mark { color: var(--correct); }
+.build-line.is-wrong .end-mark { color: var(--wrong); }
 .build-line.is-correct { border-color: var(--correct); }
 .build-line.is-wrong { border-color: var(--wrong); }
 .word-bank { display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px; margin-top: 22px; }
