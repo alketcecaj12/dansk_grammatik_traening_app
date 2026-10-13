@@ -45,6 +45,7 @@
     whyLabel: "Why",
     typeHere: "Type your answer",
     buildSentence: "Tap the words in the right order.",
+    buildLead: "The start of the sentence is already in place.",
     buildQuestion: "Tap the words in the right order. This sentence is a question.",
     clearTiles: "Start again",
     pickAnswer: "Choose the right word.",

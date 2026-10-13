@@ -181,6 +181,7 @@ main { width: var(--page); margin: 0 auto; padding: 40px 0 96px; }
 .word { min-height: 44px; padding: 0 14px; border: 1.5px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface); font-weight: 600; font-size: var(--step-1); }
 .word:hover:not(:disabled) { border-color: var(--cobalt); }
 .build-line .word { border-color: var(--cobalt); background: var(--cobalt-tint); }
+.build-line .word.is-lead { display: inline-flex; align-items: center; border-color: var(--cobalt); background: var(--cobalt); color: var(--cobalt-ink); cursor: default; }
 .build-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 24px; }
 
 .feedback { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 20px; align-items: end; margin-top: 22px; padding: 18px 20px; border-radius: var(--r-md); background: var(--surface-2); border-left: 4px solid var(--wrong); }

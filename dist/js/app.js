@@ -149,10 +149,14 @@
         '<form class="answer-row" id="typeForm" autocomplete="off"><input class="text-input" id="typeInput" aria-label="' + esc(UI.typeHere) + '" placeholder="' + esc(UI.typeHere) + '" autocapitalize="off" spellcheck="false">' +
         '<button class="btn btn-primary" type="submit">' + esc(UI.check) + "</button></form>" + letterButtons();
     } else if (item.type === "order") {
-      item._tiles = shuffleTiles(tilesFor(item.a));
-      item._placed = [];
+      var words = tilesFor(item.a);
       item._end = (item.a.trim().match(/[.?!]$/) || [""])[0];
-      body = '<p class="q-instruction">' + esc(item._end === "?" ? UI.buildQuestion : UI.buildSentence) + "</p>" +
+      var lead = leadLength(words, item._end);
+      item._lead = lead ? { id: -1, word: capFirst(words.slice(0, lead).join(" ")), locked: true } : null;
+      item._tiles = shuffleTiles(words.slice(lead));
+      item._placed = item._lead ? [item._lead] : [];
+      body = '<p class="q-instruction">' + esc(item._end === "?" ? UI.buildQuestion : UI.buildSentence) +
+        (item._lead ? " " + esc(UI.buildLead) : "") + "</p>" +
         '<div class="build-line" id="buildLine" data-empty="…"></div><div class="word-bank" id="wordBank"></div>' +
         '<div class="build-actions"><button class="btn btn-secondary" data-action="clear-tiles">' + esc(UI.clearTiles) + "</button>" +
         '<button class="btn btn-primary" data-action="check-order" disabled>' + esc(UI.check) + "</button></div>";
@@ -174,6 +178,17 @@
       return clean;
     }).filter(Boolean);
   }
+  /* The opening element (time, place, object, manner, question word or subject) is
+     placed for the learner as a clue. Yes/no questions start with the verb, so
+     they get no clue tile: the question mark is the clue. */
+  var LEAD_PREPS = ["i", "om", "til", "hver", "sidste", "næste", "på", "efter", "for"];
+  function leadLength(words, end) {
+    if (words.length < 3) return 0;
+    var first = words[0].toLowerCase();
+    if (end === "?" && first.indexOf("hv") !== 0) return 0;
+    return LEAD_PREPS.indexOf(first) !== -1 ? 2 : 1;
+  }
+  function capFirst(w) { return w.charAt(0).toUpperCase() + w.slice(1); }
   function shuffleTiles(words) {
     var tiles = words.map(function (w, i) { return { id: i, word: w }; });
     var mixed = shuffle(tiles), tries = 0;
@@ -183,14 +198,16 @@
   function drawTiles() {
     var item = round.items[round.index];
     var line = document.getElementById("buildLine"), bank = document.getElementById("wordBank");
-    line.innerHTML = item._placed.map(function (t) { return '<button class="word" data-unplace="' + t.id + '">' + esc(t.word) + "</button>"; }).join("") +
+    line.innerHTML = item._placed.map(function (t) {
+      return t.locked ? '<span class="word is-lead">' + esc(t.word) + "</span>" : '<button class="word" data-unplace="' + t.id + '">' + esc(t.word) + "</button>";
+    }).join("") +
       (item._end ? '<span class="end-mark" aria-hidden="true">' + item._end + "</span>" : "");
     bank.innerHTML = item._tiles.map(function (t) {
       var used = item._placed.some(function (p) { return p.id === t.id; });
       return '<button class="word" data-place="' + t.id + '"' + (used ? ' disabled style="visibility:hidden"' : "") + ">" + esc(t.word) + "</button>";
     }).join("");
     var check = app.querySelector('[data-action="check-order"]');
-    if (check) check.disabled = item._placed.length !== item._tiles.length;
+    if (check) check.disabled = item._placed.length !== item._tiles.length + (item._lead ? 1 : 0);
   }
 
   /* Answer handling for choice / type / order */
@@ -259,14 +276,14 @@
     var item = round.items[round.index];
     if (round.results[round.index]) return;
     var built = item._placed.map(function (t) { return t.word; }).join(" ");
-    built = built.charAt(0).toUpperCase() + built.slice(1) + (item._end || "");
+    built = capFirst(built) + (item._end || "");
     var accepted = [item.a].concat(item.alt || []).map(norm);
     var correct = accepted.indexOf(norm(built)) !== -1;
     var line = document.getElementById("buildLine");
     line.classList.add(correct ? "is-correct" : "is-wrong");
     var first = line.querySelector(".word");
-    if (first) first.textContent = first.textContent.charAt(0).toUpperCase() + first.textContent.slice(1);
-    app.querySelectorAll(".word").forEach(function (b) { b.disabled = true; });
+    if (first) first.textContent = capFirst(first.textContent);
+    app.querySelectorAll("button.word").forEach(function (b) { b.disabled = true; });
     app.querySelectorAll(".build-actions .btn").forEach(function (b) { b.disabled = true; });
     finishQuestion(correct, built);
   }
@@ -376,7 +393,7 @@
       item._placed = item._placed.filter(function (t) { return t.id !== +el.dataset.unplace; }); drawTiles(); return;
     }
     switch (el.dataset.action) {
-      case "clear-tiles": item._placed = []; drawTiles(); break;
+      case "clear-tiles": item._placed = item._lead ? [item._lead] : []; drawTiles(); break;
       case "check-order": answerOrder(); break;
       case "check-writing": answerWriting(); break;
       case "next": next(); break;
