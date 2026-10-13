@@ -58,6 +58,8 @@ flowchart TD
 | 🧩 **Build the sentence** | Places Danish words in the correct order | Word order |
 | ⏱️ **60-second sprint** | Answers as many questions as possible | Speed and recall |
 | ✍️ **Writing practice** | Writes e-mails, notices, applications, and complaints | Danskprøve preparation |
+| 🔁 **Review your mistakes** | Re-practises every question answered wrong until it is right | Fixing weak spots |
+| ☀️ **Sentence of the day** | Answers one new gap sentence on the front page each day | A daily habit |
 
 ## 📚 Grammar topics
 
@@ -79,18 +81,21 @@ _🔴 Verber · 🔵 Adverbier · 🟡 Pronominer · 🟢 Adjektiver · 🟣 Kon
 
 ## ✨ Features
 
-- 📝 **50 self-correcting questions** across five grammar topics
+- 📝 **150 self-correcting questions** across five grammar topics
 - 🧩 **10 sentence-building challenges**
 - ✍️ **10 realistic writing tasks** with timers and minimum word counts
 - 💾 Automatically saved writing drafts
 - ✅ Writing requirements, self-check lists, useful phrases, and model answers
-- ⚡ Immediate feedback after every answer
+- ⚡ Immediate feedback after every answer – the gap in the sentence fills in with the right word
+- 🔁 Mistakes are saved and can be practised again until they are fixed
+- 📋 A results screen that lists each mistake with the correct answer and explanation
 - 💬 Short, learner-friendly grammar explanations
 - 🏆 Points and answer streaks
 - 📅 A daily practice goal
-- 📈 Best scores saved separately for each topic
+- 📈 Accuracy tracked per topic across all modes
 - 💾 Progress stored locally in the browser
-- ⌨️ Keyboard-friendly controls and visible focus states
+- ⌨️ Keyboard shortcuts: press 1–4 to answer and Enter for the next question
+- 🌙 Automatic dark mode
 - 📱 Responsive layout for mobile, tablet, and desktop
 - 🚫 No backend, login, database, or build process
 
@@ -262,7 +267,7 @@ Sentence-building exercises are stored in the **`BUILD_QUESTIONS`** array. The s
 
 ## ♻️ Reset saved progress
 
-Learner progress is stored under the browser key **`ordvaerk-progress`**. Reset it from the browser developer console:
+Use **Nulstil fremgang** at the bottom of the front page. Progress is stored under the browser key **`ordvaerk-progress`** (drafts under **`ordvaerk-writing-drafts`**), so it can also be reset from the developer console:
 
 ```javascript
 localStorage.removeItem("ordvaerk-progress");
@@ -290,7 +295,6 @@ The exercises are original learning activities informed by common Danish grammar
 - 🔉 Danish pronunciation audio
 - 🏅 Achievements and badges
 - 🎚️ More difficulty levels
-- 🧠 A review mode for incorrect answers
 - 🌐 Interface translations
 - 📊 A detailed progress dashboard
 
