@@ -1,305 +1,155 @@
 <div align="center">
 
-![Ordværk - playful Danish grammar learning](assets/ordvaerk-banner.png)
+# 🇩🇰 Danish Grammar Trainer
 
-# 🇩🇰 Ordværk
+### Train your grammar for a better score in the PD3 language test (Prøve i Dansk 3)
 
-### 🎯 Interactive Danish grammar training for A2-B1 learners
+### 👉 [**Open the app**](https://alketcecaj12.github.io/dansk_grammatik_traening_app/) 👈
 
-## 🧠 ✦ 🎮 ✦ 🧩 ✦ ⚡ ✦ 🏆
-
-**Practice. Play. Understand. Repeat.** ✨
+*Free, no sign-up, works on phone, tablet and desktop.*
 
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=111)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![No dependencies](https://img.shields.io/badge/dependencies-none-2B8068?style=for-the-badge)](#-technology)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-ready-222?style=for-the-badge&logo=github)](#-deploy-with-github-pages)
+[![No dependencies](https://img.shields.io/badge/dependencies-none-2347b5?style=for-the-badge)](#-technology)
+[![Live on GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-2347b5?style=for-the-badge&logo=github)](https://alketcecaj12.github.io/dansk_grammatik_traening_app/)
 
 </div>
 
 ---
 
-## 👋 What is Ordværk?
+## 👋 What is it?
 
-**Ordværk** is a responsive web app that makes Danish grammar and writing practice feel more interactive. It is designed for learners around levels **A2-B1** and works entirely in the browser - no account, database, or installation required.
+Danish Grammar Trainer is a browser app for people learning Danish. You choose your level, choose a topic, and answer a round of 10 questions. Every answer gets an instant explanation in English, and a results screen goes through your mistakes at the end.
 
-Learners receive instant feedback, short explanations, points, streaks, and progress tracking while practising five essential grammar areas.
-
-> 💡 **The idea:** small exercises, clear explanations, and frequent repetition make grammar easier to remember.
+The interface is in English and only the exercises are in Danish. An Italian interface is planned.
 
 ## 🧭 How it works
 
 ```mermaid
 flowchart TD
-    A["🎓 Choose a grammar topic"] --> B{"🎮 Pick a game mode"}
-    B --> C["✅ Topic quiz"]
-    B --> D["🧩 Build a sentence"]
-    B --> E["⏱️ 60-second sprint"]
-    B --> H["✍️ Writing practice"]
-    C --> F["💬 Instant explanation"]
-    D --> F
-    E --> F
-    H --> I["✅ Word count & self-check"]
-    I --> G
-    F --> G["🏆 Points, streaks & progress"]
+    A["🎓 Choose your level"] --> B["📚 Choose a topic"]
+    B --> C["❓ 10 questions"]
+    C --> D["💬 Explanation after each answer"]
+    D --> E["🏆 Results, mistakes and best score"]
 ```
 
-## 🎮 Training modes
+## 🎓 Levels
 
-| Mode | What the learner does | Best for |
-| --- | --- | --- |
-| 🎲 **Mixed quiz** | Answers 10 questions from every topic | General revision |
-| 🎯 **Topic practice** | Focuses on one grammar category | Targeted improvement |
-| 🧩 **Build the sentence** | Places Danish words in the correct order | Word order |
-| ⏱️ **60-second sprint** | Answers as many questions as possible | Speed and recall |
-| ✍️ **Writing practice** | Writes e-mails, notices, applications, and complaints | Danskprøve preparation |
+| Level | CEFR | Focus |
+| --- | :---: | --- |
+| **Beginner** | A1 | Pronouns, present tense, simple word order, telling the time |
+| **Beginner–intermediate** | A2 | Past tenses, conjunctions, inversion, comparing things |
+| **Intermediate–advanced** | B1 | Førdatid, indirect speech, sin/hans, relative clauses, talking about time |
 
-## 📚 Grammar topics
+## 📚 Topics (in every level)
 
-| Icon | Topic | Learners practise |
-| :---: | --- | --- |
-| 🔴 | **Verber** | Present, past, perfect tense, auxiliaries, and modal verbs |
-| 🔵 | **Adverbier** | Placement, direction, and central adverbs |
-| 🟡 | **Pronominer** | Personal, reflexive, possessive, and indefinite pronouns |
-| 🟢 | **Adjektiver** | Agreement, comparison, and irregular forms |
-| 🟣 | **Konjunktioner** | Subordinate clauses, connectors, and Danish word order |
+| Topic | What you practise |
+| --- | --- |
+| 🔴 **Verbs** | Tenses, modal verbs and irregular forms |
+| 🔵 **Adverbs** | ikke, også, altid … and ud/ude, hjem/hjemme |
+| 🟢 **Adjectives** | Endings, comparison and irregular forms |
+| 🟡 **Pronouns** | Personal, possessive and reflexive pronouns |
+| 🟠 **Prepositions** | i, på, til, fra, med, om, af … |
+| 🟣 **Conjunctions** | og, men, fordi, da, når, hvis, om … |
+| 🔀 **Inversion & word order** | Where the verb and the adverb go |
+| 🕒 **Can you tell the clock?** | Beginner and Beginner–intermediate: read a clock face and say the time in Danish (*halv tre* = 2:30) |
+| 📅 **Can you talk about time?** | Intermediate–advanced: i dag, i går, i forgårs, i morgen, i overmorgen, for … siden, om … |
+| ✍️ **Let's train your writing** | Translate an English sentence into Danish and get a score |
 
-<div align="center">
+## 🎮 Question types
 
-![Five visual cards representing the Ordværk grammar topics](assets/grammar-topics.png)
+- ✅ **Multiple choice:** pick the right word out of four options (keys 1–4 work too)
+- ⌨️ **Type the form:** write the missing word, with æ ø å buttons
+- 🧩 **Build the sentence:** tap word tiles in the right order
+- 🕒 **Clock:** a drawn clock face with new times every round; the wrong options are the typical mistakes
+- ✍️ **Writing:** type the Danish sentence and press Enter
 
-_🔴 Verber · 🔵 Adverbier · 🟡 Pronominer · 🟢 Adjektiver · 🟣 Konjunktioner_
+### How writing is scored
 
-</div>
+Your sentence is compared word by word with a hidden Danish answer:
 
-## ✨ Features
+- right word in the right place = 1 point
+- small spelling slip (one letter, or *ae/oe/aa* for *æ/ø/å*) or right word in the wrong place = ½ point
+- score = points ÷ number of words in the longer sentence
 
-- 📝 **50 self-correcting questions** across five grammar topics
-- 🧩 **10 sentence-building challenges**
-- ✍️ **10 realistic writing tasks** with timers and minimum word counts
-- 💾 Automatically saved writing drafts
-- ✅ Writing requirements, self-check lists, useful phrases, and model answers
-- ⚡ Immediate feedback after every answer
-- 💬 Short, learner-friendly grammar explanations
-- 🏆 Points and answer streaks
-- 📅 A daily practice goal
-- 📈 Best scores saved separately for each topic
-- 💾 Progress stored locally in the browser
-- ⌨️ Keyboard-friendly controls and visible focus states
-- 📱 Responsive layout for mobile, tablet, and desktop
-- 🚫 No backend, login, database, or build process
+So all words right gives 100%, and one missing word in a three-word sentence gives 67%. The correct sentence is then shown with every word marked as right, slightly off, or missing.
+
+## ✨ What's inside
+
+- 📝 **302 grammar questions** across 3 levels and 7 topics
+- 📅 **27 questions** about talking about time
+- 🕒 **Clock questions generated fresh** every round
+- ✍️ **242 writing phrases** (82 Beginner, 80 Beginner–intermediate, 80 Intermediate–advanced)
+- 💬 A short English explanation of why the answer is right, after every question
+- 🏆 Points, best streak and best score per topic, saved in the browser
+- 🌗 Light and dark mode, responsive layout, keyboard friendly
 
 ## 🛠️ Technology
 
-Ordværk keeps the technical setup intentionally simple:
-
-- 🧱 **HTML5** for structure
-- 🎨 **CSS3** for the responsive visual design
-- ⚙️ **Vanilla JavaScript** for questions and game logic
-- 💾 Browser **`localStorage`** for learner progress
-
-There are **no npm dependencies** and no compilation step. 🎉
+Plain **HTML, CSS and JavaScript**. No framework, no npm, no build step, no server. Progress is stored in the browser's `localStorage`.
 
 ## 📁 Project structure
 
 ```text
-dansk-grammatiktraener/
-├── assets/
-│   ├── ordvaerk-banner.png  # 🖼️ README hero graphic
-│   └── grammar-topics.png   # 🎴 Grammar topic graphic
-├── dist/
-│   ├── index.html      # 🧱 Page structure and metadata
-│   ├── styles.css      # 🎨 Design and responsive layout
-│   └── app.js          # ⚙️ Questions, games, and progress
-├── .openai/
-│   └── hosting.json    # ☁️ OpenAI Sites configuration
-└── README.md           # 📖 Project documentation
+dansk_grammatik_traening_app/
+├── dist/                     # the website (this is what GitHub Pages publishes)
+│   ├── index.html
+│   ├── css/styles.css        # cobalt look, light/dark mode, phone layout
+│   └── js/
+│       ├── i18n-en.js        # every interface text (English)
+│       ├── quiz-data.js      # grammar questions per level and topic
+│       ├── clock.js          # clock questions, generated each round
+│       ├── writing-data.js   # writing phrases per level
+│       ├── writing-score.js  # writing score
+│       └── app.js            # screens and quiz logic
+├── .github/workflows/deploy.yml  # publishes dist/ to GitHub Pages on every push to main
+└── README.md
 ```
 
 ## 🚀 Run locally
 
-### Option 1: open the file
+Open **`dist/index.html`** in your browser. That's all.
 
-Open **`dist/index.html`** directly in your browser. That is all you need. ✨
-
-### Option 2: use a local server
-
-From the project directory, run:
+Or serve it:
 
 ```bash
 python3 -m http.server 8000 --directory dist
 ```
 
-Then visit **[http://localhost:8000](http://localhost:8000)**.
+and visit <http://localhost:8000>.
 
-## 🐙 Push the project to GitHub
+## 🌍 Deployment
 
-Create an empty repository on GitHub, open a terminal in the project directory, and run:
+Every push to `main` publishes `dist/` to GitHub Pages through [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). In **Settings › Pages**, the source must be set to **GitHub Actions**.
 
-```bash
-git init
-git add .
-git commit -m "Initial version of Ordværk"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
-git push -u origin main
-```
+## ✏️ Editing content
 
-Replace **`YOUR-USERNAME`** and **`YOUR-REPOSITORY`** with your GitHub details.
+- **Questions:** `dist/js/quiz-data.js`. Each level has a list per topic. Helpers: `c(question, answer, options, explanation)` for multiple choice (write the gap as `___`), `t(question, answer, explanation)` for typing, `o(answer, explanation)` for word tiles.
+- **Writing phrases:** `dist/js/writing-data.js`, as `{ en, da, alt }`. Put optional words in brackets, like `(at)`, and other correct answers in `alt`.
+- **Interface text:** `dist/js/i18n-en.js`. For the Italian version, copy it to `i18n-it.js`, translate the values and change the script tag in `index.html`.
 
-> ℹ️ **Already using Git?** Skip `git init`. If an `origin` remote already exists, use `git remote set-url origin YOUR-GITHUB-URL`.
+## ♻️ Reset progress
 
-## 🌍 Deploy with GitHub Pages
-
-Because the website files are inside **`dist/`**, the cleanest GitHub Pages setup uses GitHub Actions.
-
-1. ⚙️ Open your repository on GitHub.
-2. 📄 Go to **Settings > Pages**.
-3. 🚀 Select **GitHub Actions** under **Build and deployment**.
-4. 📁 Create **`.github/workflows/deploy.yml`**.
-5. 📋 Add the workflow below.
-
-<details>
-<summary><strong>👀 Show the GitHub Pages workflow</strong></summary>
-
-```yaml
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
-jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload website
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-      - name: Deploy website
-        id: deployment
-        uses: actions/deploy-pages@v4
-```
-
-</details>
-
-Commit and push the workflow. GitHub will automatically publish the app after the action finishes. ✅
-
-## ☁️ Other deployment options
-
-The **`dist`** folder is a complete static website, so it can also be deployed to:
-
-- 🟦 Netlify
-- 🟧 Cloudflare Pages
-- ▲ Vercel
-- 🖥️ Any conventional web server
-
-Use these settings:
-
-| Setting | Value |
-| --- | --- |
-| Build command | _Leave empty_ |
-| Publish directory | `dist` |
-
-## ✍️ Add or edit questions
-
-All question data is stored near the top of **`dist/app.js`**.
-
-<details>
-<summary><strong>📝 Multiple-choice question example</strong></summary>
+Use **Reset my progress** at the bottom of the page, or run this in the browser console:
 
 ```javascript
-{
-  topic: "verbs",
-  q: "I går ___ jeg bussen klokken syv.",
-  options: ["tager", "tog", "har taget", "tage"],
-  answer: "tog",
-  explain: "‘I går’ peger på afsluttet datid. Datid af ‘at tage’ er ‘tog’."
-}
-```
-
-</details>
-
-The **`answer`** value must exactly match one item in **`options`**.
-
-### 🔑 Supported topic keys
-
-- `verbs` 🔴
-- `adverbs` 🔵
-- `pronouns` 🟡
-- `adjectives` 🟢
-- `conjunctions` 🟣
-
-Sentence-building exercises are stored in the **`BUILD_QUESTIONS`** array. The selected words must produce exactly the text stored in **`answer`**.
-
-## ♻️ Reset saved progress
-
-Learner progress is stored under the browser key **`ordvaerk-progress`**. Reset it from the browser developer console:
-
-```javascript
-localStorage.removeItem("ordvaerk-progress");
+localStorage.removeItem("dgt-progress");
 location.reload();
 ```
 
-## ♿ Accessibility and browser support
-
-Ordværk includes:
-
-- ⌨️ Keyboard navigation
-- 🔎 Visible focus states
-- 🔊 Screen-reader feedback
-- 🧘 Reduced-motion support
-- 📐 Responsive layouts
-
-The app is intended for current versions of **Chrome, Firefox, Safari, and Edge**.
-
 ## 🧑‍🏫 Content notes
 
-The exercises are original learning activities informed by common Danish grammar patterns. Review all educational content before using the app in a formal course or publishing substantial modifications.
-
-## 🗺️ Ideas for future development
-
-- 🔉 Danish pronunciation audio
-- 🏅 Achievements and badges
-- 🎚️ More difficulty levels
-- 🧠 A review mode for incorrect answers
-- 🌐 Interface translations
-- 📊 A detailed progress dashboard
+All sentences are original, written in the style of common Danish course books (Sådan 1 and 2, "Test din viden"). Please review the content before using it in a formal course.
 
 ## 📜 License
 
-No open-source license is included yet. Add a license file before inviting others to copy, modify, or redistribute the project.
+No license yet. Add one before inviting others to copy or reuse the project.
 
 ---
 
 <div align="center">
 
-## 💙 ❤️ 💛 💚 💜
-
-### ❤️ Built for people learning Danish 🇩🇰
-
-### 🧠 God fornøjelse med grammatikken! 🎉
+### God fornøjelse med grammatikken! 🇩🇰
 
 </div>
