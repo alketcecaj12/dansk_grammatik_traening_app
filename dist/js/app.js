@@ -59,7 +59,21 @@
       return generated;
     }
     if (cat === "time") return shuffle(DATA.time.advanced).slice(0, ROUND);
-    return shuffle(DATA.levels[level][cat]).slice(0, ROUND);
+    return pickFresh(level + "/" + cat, DATA.levels[level][cat]);
+  }
+
+  /* Questions not shown recently come first, so repeated rounds go through the
+     whole bank before any sentence comes back. */
+  function pickFresh(key, pool) {
+    progress.seen = progress.seen || {};
+    var recent = progress.seen[key] || [];
+    function idOf(item) { return item.q || item.a; }
+    function age(item) { return recent.indexOf(idOf(item)); }
+    var picked = shuffle(pool).sort(function (x, y) { return age(x) - age(y); }).slice(0, ROUND);
+    var ids = picked.map(idOf);
+    progress.seen[key] = recent.filter(function (id) { return ids.indexOf(id) === -1; }).concat(ids).slice(-pool.length);
+    saveProgress();
+    return picked;
   }
 
   /* ---------- Screens ---------- */
