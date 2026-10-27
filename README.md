@@ -53,6 +53,7 @@ flowchart TD
 | 🟠 **Prepositions** | i, på, til, fra, med, om, af … |
 | 🟣 **Conjunctions** | og, men, fordi, da, når, hvis, om … |
 | 🔀 **Inversion & word order** | Where the verb and the adverb go |
+| 📖 **Learn new words** | 500 new words per level: see a Danish word, pick its English meaning out of four, then read it in a Danish sentence |
 | 🕒 **Can you tell the clock?** | Beginner and Beginner–intermediate: read a clock face and say the time in Danish (*halv tre* = 2:30) |
 | 📅 **Can you talk about time?** | Intermediate–advanced: i dag, i går, i forgårs, i morgen, i overmorgen, for … siden, om … |
 | ✍️ **Let's train your writing** | Translate an English sentence into Danish and get a score |
@@ -64,6 +65,7 @@ flowchart TD
 - 🧩 **Build the sentence:** tap word tiles in the right order
 - 🕒 **Clock:** a drawn clock face with new times every round; the wrong options are the typical mistakes
 - ✍️ **Writing:** type the Danish sentence and press Enter
+- 📖 **New words:** a Danish word and four English meanings; the wrong ones are words of the same kind (noun, verb …) from the same level. After you answer, the word is shown in an example sentence
 
 ### How writing is scored
 
@@ -79,6 +81,7 @@ So all words right gives 100%, and one missing word in a three-word sentence giv
 
 - 📝 **302 grammar questions** across 3 levels and 7 topics
 - 📅 **27 questions** about talking about time
+- 📖 **1,500 new words** (500 per level), each with an example sentence
 - 🕒 **Clock questions generated fresh** every round
 - ✍️ **242 writing phrases** (82 Beginner, 80 Beginner–intermediate, 80 Intermediate–advanced)
 - 💬 A short English explanation of why the answer is right, after every question
@@ -102,6 +105,7 @@ dansk_grammatik_traening_app/
 │       ├── clock.js          # clock questions, generated each round
 │       ├── writing-data.js   # writing phrases per level
 │       ├── writing-score.js  # writing score
+│       ├── vocab-*.js        # 500 new words per level (beginner, intermediate, advanced)
 │       └── app.js            # screens and quiz logic
 ├── .github/workflows/deploy.yml  # publishes dist/ to GitHub Pages on every push to main
 └── README.md

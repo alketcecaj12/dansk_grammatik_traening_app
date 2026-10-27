@@ -271,3 +271,10 @@ main { width: var(--page); margin: 0 auto; padding: 40px 0 96px; }
 .legend i.w-correct { background: var(--correct); }
 .legend i.w-close { background: var(--close); }
 .legend i.w-missing { background: var(--wrong); }
+
+/* Learn new words */
+.vocab-word { margin-bottom: 22px; font-weight: 800; font-size: var(--step-4); line-height: 1.1; letter-spacing: -.03em; color: var(--cobalt); overflow-wrap: anywhere; }
+.vocab-example { display: block; margin-top: 12px; }
+.vocab-example-label { display: block; color: var(--muted); font-size: var(--step--1); font-weight: 600; }
+.vocab-example-text { display: block; margin-top: 2px; color: var(--ink); font-size: var(--step-1); font-weight: 600; }
+.vocab-example-text mark, .review-item mark { padding: 0 2px; border-radius: 3px; background: var(--cobalt-tint); color: var(--cobalt); }
