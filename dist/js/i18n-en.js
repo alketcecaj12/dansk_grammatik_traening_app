@@ -24,6 +24,7 @@
       prepositions: { name: "Prepositions", blurb: "i, på, til, fra, med, om, af …" },
       conjunctions: { name: "Conjunctions", blurb: "og, men, fordi, da, når, hvis, om …" },
       wordorder: { name: "Inversion & word order", blurb: "Where the verb and the adverb go" },
+      vocab: { name: "Learn new words", blurb: "500 words: pick the meaning, then see the word in a sentence" },
       clock: { name: "Can you tell the clock?", blurb: "Read clocks and say the time in Danish" },
       time: { name: "Can you talk about time?", blurb: "i går, i forgårs, i overmorgen, for … siden, om …" },
       writing: { name: "Let's train your writing", blurb: "Write the Danish sentence and get a score" }
@@ -50,6 +51,8 @@
     clearTiles: "Start again",
     pickAnswer: "Choose the right word.",
     typeForm: "Type the missing word.",
+    vocabPrompt: "What does this word mean?",
+    vocabExample: "In a sentence",
 
     writingPrompt: "Write this in Danish:",
     writingPlaceholder: "Skriv her …",

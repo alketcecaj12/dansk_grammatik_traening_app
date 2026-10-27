@@ -5,7 +5,7 @@
 (function () {
   "use strict";
 
-  var UI = window.UI, DATA = window.QUIZ_DATA, PHRASES = window.WRITING_PHRASES;
+  var UI = window.UI, DATA = window.QUIZ_DATA, PHRASES = window.WRITING_PHRASES, VOCAB = window.VOCAB_DATA;
   var app = document.getElementById("app");
   var live = document.getElementById("liveRegion");
   var ROUND = 10;
@@ -15,6 +15,7 @@
   var NAMES = ["Ole", "Marie", "Kristian", "Louise", "Louisa", "Mette", "Peter", "Eva", "Hanne", "Pia", "Netto", "Danmark", "København", "Aarhus", "USA"];
   var ICONS = {
     verbs: "V", adverbs: "Av", adjectives: "Aj", pronouns: "Pr", prepositions: "På", conjunctions: "Og", wordorder: "VS",
+    vocab: '<svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>',
     clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     time: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
     writing: '<svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14 8l3 3"/></svg>'
@@ -43,7 +44,7 @@
   }
 
   function categoriesFor(level) {
-    return GRAMMAR.concat([level === "advanced" ? "time" : "clock", "writing"]);
+    return GRAMMAR.concat(["vocab", level === "advanced" ? "time" : "clock", "writing"]);
   }
 
   /* ---------- Building a round ---------- */
@@ -59,6 +60,7 @@
       return generated;
     }
     if (cat === "time") return shuffle(DATA.time.advanced).slice(0, ROUND);
+    if (cat === "vocab") return pickFresh(level + "/vocab", vocabBank(level)).map(vocabQuestion);
     return pickFresh(level + "/" + cat, DATA.levels[level][cat]);
   }
 
@@ -67,13 +69,50 @@
   function pickFresh(key, pool) {
     progress.seen = progress.seen || {};
     var recent = progress.seen[key] || [];
-    function idOf(item) { return item.q || item.a; }
+    function idOf(item) { return item.q || item.word || item.a; }
     function age(item) { return recent.indexOf(idOf(item)); }
     var picked = shuffle(pool).sort(function (x, y) { return age(x) - age(y); }).slice(0, ROUND);
     var ids = picked.map(idOf);
     progress.seen[key] = recent.filter(function (id) { return ids.indexOf(id) === -1; }).concat(ids).slice(-pool.length);
     saveProgress();
     return picked;
+  }
+
+  /* "Learn new words": each line of VOCAB_DATA is type|Danish|English|example.
+     The three wrong meanings come from words of the same type and level. */
+  var vocabCache = {};
+  function vocabBank(level) {
+    if (!vocabCache[level]) {
+      vocabCache[level] = VOCAB[level].trim().split("\n").map(function (line) {
+        var f = line.split("|");
+        return { pos: f[0], word: f[1], a: f[2], example: f[3], level: level };
+      });
+    }
+    return vocabCache[level];
+  }
+  function vocabQuestion(w) {
+    var others = shuffle(vocabBank(w.level).filter(function (x) { return x.pos === w.pos && x.a !== w.a; }));
+    return { type: "choice", vocab: true, word: w.word, a: w.a, o: others.slice(0, 3).map(function (x) { return x.a; }), example: w.example, prompt: UI.vocabPrompt };
+  }
+  /* Marks the word inside its example sentence. Inflected forms are found by the
+     start of the word (bil → bilen, spise → spiser); irregular forms stay unmarked. */
+  function exampleHTML(word, sentence) {
+    var bare = word.replace(/^(en|et|at) /, "");
+    var at = sentence.toLowerCase().indexOf(bare.toLowerCase());
+    if (bare.indexOf(" ") !== -1 && at !== -1) {
+      return esc(sentence.slice(0, at)) + "<mark>" + esc(sentence.slice(at, at + bare.length)) + "</mark>" + esc(sentence.slice(at + bare.length));
+    }
+    var stem = bare.split(" ")[0].toLowerCase();
+    if (stem.length > 4 && /e$/.test(stem)) stem = stem.slice(0, -1).replace(/([bdgklmnprst])\1$/, "$1");
+    if (stem.length < 2) return esc(sentence);
+    return sentence.split(/(\s+)/).map(function (tok) {
+      var core = tok.replace(/^[«»"(]+|[.,!?;:»«")]+$/g, "");
+      if (core && core.toLowerCase().indexOf(stem) === 0) return esc(tok).replace(esc(core), "<mark>" + esc(core) + "</mark>");
+      return esc(tok);
+    }).join("");
+  }
+  function exampleBlock(item) {
+    return '<span class="vocab-example"><span class="vocab-example-label">' + esc(UI.vocabExample) + '</span><span class="vocab-example-text" lang="da">' + exampleHTML(item.word, item.example) + "</span></span>";
   }
 
   /* ---------- Screens ---------- */
@@ -99,7 +138,7 @@
     var L = UI.levels[level];
     var items = categoriesFor(level).map(function (cat) {
       var C = UI.categories[cat], best = progress.best[level + "/" + cat];
-      var special = cat === "clock" || cat === "time" || cat === "writing";
+      var special = cat === "vocab" || cat === "clock" || cat === "time" || cat === "writing";
       return '<button class="topic' + (special ? " is-special" : "") + '" data-go="#/play/' + level + "/" + cat + '">' +
         '<span class="topic-icon" aria-hidden="true">' + ICONS[cat] + "</span>" +
         '<span class="topic-name">' + esc(C.name) + "</span>" +
@@ -153,6 +192,7 @@
       item._options = options;
       body = '<p class="q-instruction">' + esc(item.prompt || UI.pickAnswer) + "</p>" +
         (item.visual ? '<div class="visual">' + item.visual + "</div>" : "") +
+        (item.vocab ? '<p class="vocab-word" lang="da">' + esc(item.word) + "</p>" : "") +
         (item.q ? '<p class="sentence" id="sentence">' + sentenceHTML(item.q) + "</p>" : "") +
         '<div class="options">' + options.map(function (opt, i) {
           return '<button class="option" data-option="' + i + '">' + esc(opt) + '<span class="kbd">' + (i + 1) + "</span></button>";
@@ -264,7 +304,7 @@
       slot.classList.add("is-filled", "is-correct");
       slot.innerHTML = correct ? esc(item.a) : "<del>" + esc(picked) + "</del><ins>" + esc(item.a) + "</ins>";
     }
-    finishQuestion(correct, picked);
+    finishQuestion(correct, picked, item.vocab ? exampleBlock(item) : "");
   }
 
   function answerType() {
@@ -364,6 +404,7 @@
       var it = r.item, shown;
       if (it.type === "order") shown = esc(it.a);
       else if (it.q && it.q.indexOf("___") !== -1) shown = sentenceHTML(it.q, "<del>" + esc(r.picked) + "</del><ins>" + esc(it.a) + "</ins>");
+      else if (it.vocab) return '<li class="review-item"><p class="sentence"><span lang="da">' + esc(it.word) + "</span> = " + esc(it.a) + '</p><p lang="da">' + exampleHTML(it.word, it.example) + "</p></li>";
       else shown = esc(it.answerText || it.a);
       return '<li class="review-item"><p class="sentence">' + shown + "</p><p>" + (it.type === "order" ? esc(UI.youWrote) + ": " + esc(r.picked) + " · " : "") + esc(it.e || "") + "</p></li>";
     }).join("");
