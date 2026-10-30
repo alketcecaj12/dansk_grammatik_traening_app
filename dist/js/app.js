@@ -85,14 +85,14 @@
     if (!vocabCache[level]) {
       vocabCache[level] = VOCAB[level].trim().split("\n").map(function (line) {
         var f = line.split("|");
-        return { pos: f[0], word: f[1], a: f[2], example: f[3], level: level };
+        return { pos: f[0], word: f[1], a: f[2], example: f[3], translation: f[4] || "", level: level };
       });
     }
     return vocabCache[level];
   }
   function vocabQuestion(w) {
     var others = shuffle(vocabBank(w.level).filter(function (x) { return x.pos === w.pos && x.a !== w.a; }));
-    return { type: "choice", vocab: true, word: w.word, a: w.a, o: others.slice(0, 3).map(function (x) { return x.a; }), example: w.example, prompt: UI.vocabPrompt };
+    return { type: "choice", vocab: true, word: w.word, a: w.a, o: others.slice(0, 3).map(function (x) { return x.a; }), example: w.example, translation: w.translation, prompt: UI.vocabPrompt };
   }
   /* Marks the word inside its example sentence. Inflected forms are found by the
      start of the word (bil → bilen, spise → spiser); irregular forms stay unmarked. */
@@ -112,7 +112,8 @@
     }).join("");
   }
   function exampleBlock(item) {
-    return '<span class="vocab-example"><span class="vocab-example-label">' + esc(UI.vocabExample) + '</span><span class="vocab-example-text" lang="da">' + exampleHTML(item.word, item.example) + "</span></span>";
+    return '<span class="vocab-example"><span class="vocab-example-label">' + esc(UI.vocabExample) + '</span><span class="vocab-example-text" lang="da">' + exampleHTML(item.word, item.example) + "</span>" +
+      (item.translation ? '<span class="vocab-example-en" lang="en">' + esc(item.translation) + "</span>" : "") + "</span>";
   }
 
   /* ---------- Screens ---------- */
@@ -404,7 +405,7 @@
       var it = r.item, shown;
       if (it.type === "order") shown = esc(it.a);
       else if (it.q && it.q.indexOf("___") !== -1) shown = sentenceHTML(it.q, "<del>" + esc(r.picked) + "</del><ins>" + esc(it.a) + "</ins>");
-      else if (it.vocab) return '<li class="review-item"><p class="sentence"><span lang="da">' + esc(it.word) + "</span> = " + esc(it.a) + '</p><p lang="da">' + exampleHTML(it.word, it.example) + "</p></li>";
+      else if (it.vocab) return '<li class="review-item"><p class="sentence"><span lang="da">' + esc(it.word) + "</span> = " + esc(it.a) + '</p><p lang="da">' + exampleHTML(it.word, it.example) + "</p>" + (it.translation ? '<p class="review-translation">' + esc(it.translation) + "</p>" : "") + "</li>";
       else shown = esc(it.answerText || it.a);
       return '<li class="review-item"><p class="sentence">' + shown + "</p><p>" + (it.type === "order" ? esc(UI.youWrote) + ": " + esc(r.picked) + " · " : "") + esc(it.e || "") + "</p></li>";
     }).join("");
