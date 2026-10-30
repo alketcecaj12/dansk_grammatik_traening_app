@@ -53,7 +53,7 @@ flowchart TD
 | 🟠 **Prepositions** | i, på, til, fra, med, om, af … |
 | 🟣 **Conjunctions** | og, men, fordi, da, når, hvis, om … |
 | 🔀 **Inversion & word order** | Where the verb and the adverb go |
-| 📖 **Learn new words** | 500 new words per level: see a Danish word, pick its English meaning out of four, then read it in a Danish sentence |
+| 📖 **Learn new words** | 800 / 1,000 / 1,500 words (Beginner / Beginner–intermediate / Intermediate–advanced): see a Danish word, pick its English meaning out of four, then read it in a Danish sentence with its English translation underneath |
 | 🕒 **Can you tell the clock?** | Beginner and Beginner–intermediate: read a clock face and say the time in Danish (*halv tre* = 2:30) |
 | 📅 **Can you talk about time?** | Intermediate–advanced: i dag, i går, i forgårs, i morgen, i overmorgen, for … siden, om … |
 | ✍️ **Let's train your writing** | Translate an English sentence into Danish and get a score |
@@ -81,7 +81,7 @@ So all words right gives 100%, and one missing word in a three-word sentence giv
 
 - 📝 **302 grammar questions** across 3 levels and 7 topics
 - 📅 **27 questions** about talking about time
-- 📖 **1,500 new words** (500 per level), each with an example sentence
+- 📖 **3,300 new words** (800 / 1,000 / 1,500 per level, no word repeated across levels), each with a Danish example sentence and its English translation
 - 🕒 **Clock questions generated fresh** every round
 - ✍️ **242 writing phrases** (82 Beginner, 80 Beginner–intermediate, 80 Intermediate–advanced)
 - 💬 A short English explanation of why the answer is right, after every question
@@ -105,7 +105,7 @@ dansk_grammatik_traening_app/
 │       ├── clock.js          # clock questions, generated each round
 │       ├── writing-data.js   # writing phrases per level
 │       ├── writing-score.js  # writing score
-│       ├── vocab-*.js        # 500 new words per level (beginner, intermediate, advanced)
+│       ├── vocab-*.js        # Learn new words: 800 / 1,000 / 1,500 words, type|Danish|English|sentence|translation
 │       └── app.js            # screens and quiz logic
 ├── .github/workflows/deploy.yml  # publishes dist/ to GitHub Pages on every push to main
 └── README.md
