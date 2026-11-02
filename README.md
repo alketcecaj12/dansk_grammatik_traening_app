@@ -53,7 +53,7 @@ flowchart TD
 | 🟠 **Prepositions** | i, på, til, fra, med, om, af … |
 | 🟣 **Conjunctions** | og, men, fordi, da, når, hvis, om … |
 | 🔀 **Inversion & word order** | Where the verb and the adverb go |
-| 📖 **Learn new words** | 800 / 1,000 / 1,500 words (Beginner / Beginner–intermediate / Intermediate–advanced): see a Danish word, pick its English meaning out of four, then read it in a Danish sentence with its English translation underneath |
+| 📖 **Learn new words** | 800 / 1,000 / 1,500 words (Beginner / Beginner–intermediate / Intermediate–advanced): see a Danish word, pick its English meaning out of four, then read it in a Danish sentence with its English translation underneath. Tap the speaker (or press P) to hear the word and the sentence spoken in Danish |
 | 🕒 **Can you tell the clock?** | Beginner and Beginner–intermediate: read a clock face and say the time in Danish (*halv tre* = 2:30) |
 | 📅 **Can you talk about time?** | Intermediate–advanced: i dag, i går, i forgårs, i morgen, i overmorgen, for … siden, om … |
 | ✍️ **Let's train your writing** | Translate an English sentence into Danish and get a score |

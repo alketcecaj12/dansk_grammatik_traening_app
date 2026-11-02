@@ -22,11 +22,32 @@
   };
   var ARROW_LEFT = '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>';
   var ARROW_RIGHT = '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+  var SPEAKER = '<svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>';
 
   /* ---------- Helpers ---------- */
   function esc(s) { return String(s).replace(/[&<>"']/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]; }); }
   function fmt(s, vars) { return s.replace(/\{(\w+)\}/g, function (_, k) { return vars[k]; }); }
   function shuffle(list) { var a = list.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  /* Pronunciation with the browser's own speech (Web Speech API), using a Danish voice when there is one. */
+  var SPEECH = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  var daVoice = null;
+  function findVoice() {
+    var voices = window.speechSynthesis.getVoices();
+    daVoice = voices.filter(function (v) { return /^da(-|_|$)/i.test(v.lang); })[0] || null;
+  }
+  if (SPEECH) { findVoice(); window.speechSynthesis.onvoiceschanged = findVoice; }
+  function speak(text) {
+    if (!SPEECH) return;
+    var u = new SpeechSynthesisUtterance(text.replace(/…/g, ","));
+    u.lang = "da-DK"; u.rate = 0.85;
+    if (daVoice) u.voice = daVoice;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }
+  function speakButton(text, label, extra) {
+    if (!SPEECH) return "";
+    return '<button type="button" class="speak-btn' + (extra ? " " + extra : "") + '" data-say="' + esc(text) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '">' + SPEAKER + "</button>";
+  }
   function norm(s) { return WritingScore.normalize(s).join(" "); }
   function announce(text) { live.textContent = ""; setTimeout(function () { live.textContent = text; }, 30); }
 
@@ -112,7 +133,7 @@
     }).join("");
   }
   function exampleBlock(item) {
-    return '<span class="vocab-example"><span class="vocab-example-label">' + esc(UI.vocabExample) + '</span><span class="vocab-example-text" lang="da">' + exampleHTML(item.word, item.example) + "</span>" +
+    return '<span class="vocab-example"><span class="vocab-example-label">' + esc(UI.vocabExample) + '</span><span class="vocab-example-text" lang="da">' + exampleHTML(item.word, item.example) + speakButton(item.example, UI.hearSentence, "speak-btn-sm") + "</span>" +
       (item.translation ? '<span class="vocab-example-en" lang="en">' + esc(item.translation) + "</span>" : "") + "</span>";
   }
 
@@ -193,7 +214,7 @@
       item._options = options;
       body = '<p class="q-instruction">' + esc(item.prompt || UI.pickAnswer) + "</p>" +
         (item.visual ? '<div class="visual">' + item.visual + "</div>" : "") +
-        (item.vocab ? '<p class="vocab-word" lang="da">' + esc(item.word) + "</p>" : "") +
+        (item.vocab ? '<div class="vocab-head"><p class="vocab-word" lang="da">' + esc(item.word) + "</p>" + speakButton(item.word, UI.hearWord) + "</div>" : "") +
         (item.q ? '<p class="sentence" id="sentence">' + sentenceHTML(item.q) + "</p>" : "") +
         '<div class="options">' + options.map(function (opt, i) {
           return '<button class="option" data-option="' + i + '">' + esc(opt) + '<span class="kbd">' + (i + 1) + "</span></button>";
@@ -405,7 +426,7 @@
       var it = r.item, shown;
       if (it.type === "order") shown = esc(it.a);
       else if (it.q && it.q.indexOf("___") !== -1) shown = sentenceHTML(it.q, "<del>" + esc(r.picked) + "</del><ins>" + esc(it.a) + "</ins>");
-      else if (it.vocab) return '<li class="review-item"><p class="sentence"><span lang="da">' + esc(it.word) + "</span> = " + esc(it.a) + '</p><p lang="da">' + exampleHTML(it.word, it.example) + "</p>" + (it.translation ? '<p class="review-translation">' + esc(it.translation) + "</p>" : "") + "</li>";
+      else if (it.vocab) return '<li class="review-item"><p class="sentence"><span lang="da">' + esc(it.word) + "</span>" + speakButton(it.word, UI.hearWord, "speak-btn-sm") + " = " + esc(it.a) + '</p><p lang="da">' + exampleHTML(it.word, it.example) + "</p>" + (it.translation ? '<p class="review-translation">' + esc(it.translation) + "</p>" : "") + "</li>";
       else shown = esc(it.answerText || it.a);
       return '<li class="review-item"><p class="sentence">' + shown + "</p><p>" + (it.type === "order" ? esc(UI.youWrote) + ": " + esc(r.picked) + " · " : "") + esc(it.e || "") + "</p></li>";
     }).join("");
@@ -430,6 +451,7 @@
     var el = e.target.closest("button");
     if (!el) return;
     if (el.dataset.go !== undefined) { location.hash = el.dataset.go; return; }
+    if (el.dataset.say !== undefined) { speak(el.dataset.say); return; }
     if (el.dataset.option !== undefined) return answerChoice(+el.dataset.option);
     if (el.dataset.letter) {
       var field = document.getElementById("typeInput") || document.getElementById("writingInput");
@@ -470,6 +492,7 @@
     var answered = !!round.results[round.index];
     if (e.target.id === "writingInput" && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); answerWriting(); return; }
     if (answered && e.key === "Enter" && e.target.tagName !== "BUTTON") { e.preventDefault(); next(); return; }
+    if (item && item.vocab && (e.key === "p" || e.key === "P") && e.target.tagName !== "INPUT") { speak(item.word); return; }
     if (!answered && item && item.type === "choice" && /^[1-4]$/.test(e.key) && e.target.tagName !== "INPUT") {
       var i = +e.key - 1;
       if (item._options && i < item._options.length) answerChoice(i);
