@@ -53,6 +53,8 @@
     typeForm: "Type the missing word.",
     vocabPrompt: "What does this word mean?",
     vocabExample: "In a sentence",
+    hearWord: "Hear the word (P)",
+    hearSentence: "Hear the sentence",
 
     writingPrompt: "Write this in Danish:",
     writingPlaceholder: "Skriv her …",
